@@ -86,6 +86,7 @@ export default function Home() {
 		return device.is_broadcasting ? "Broadcasting" : "Idle";
 	}
 
+	// sort devices by status
 	const sorted_devices_by_status = [...devices].sort((device_a, device_b) => {
 		const status_order: Record<"Broadcasting" | "Idle" | "Offline", number> = {
 			Broadcasting: 0,
@@ -103,6 +104,7 @@ export default function Home() {
 		return new Date(device_a.last_updated).getTime() - new Date(device_b.last_updated).getTime();
 	});
 
+	// sort devices by room id
 	const sorted_devices_by_room_id = [...devices].sort((device_a, device_b) => {
 		const device_id_a = device_a.device_id ?? "";
 		const device_id_b = device_b.device_id ?? "";
@@ -110,13 +112,25 @@ export default function Home() {
 		return parseInt(device_id_a) - parseInt(device_id_b);
 	});
 
+	// count device statuses
+	const status_counts = {
+		Broadcasting: 0,
+		Idle: 0,
+		Offline: 0,
+	};
+	
+	devices.forEach((device) => {
+		const status = getDeviceStatus(device);
+		status_counts[status as keyof typeof status_counts]++;
+	});
+
 	return (
 		<div className="flex flex-col min-h-screen bg-gray-950">
-			<div className="flex flex-col m-[80px] justify-start items-start ">
-				<h1 className="text-4xl font-bold text-white mb-10">
+			<div className="flex flex-col m-[80px] gap-10 overflow-x-auto justify-start items-start ">
+				<h1 className="text-4xl font-bold text-white">
 					Dashboard
 				</h1>
-				<div className="overflow-hidden rounded-md border border-gray-700">
+				<div className="w-full overflow-x-auto rounded-md border border-gray-700">
 					<table className="w-full text-left border-collapse">
 						<thead className="bg-gray-900 border-b border-gray-700">
 							<tr>
