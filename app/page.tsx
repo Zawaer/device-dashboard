@@ -78,24 +78,18 @@ export default function Home() {
 
 		// convert interval + 60s to ms
 		const maxAllowedDelay = (parseInt(device.update_interval) + 60) * 1000;
-
-		if (now - lastUpdatedTime > maxAllowedDelay) {
-			return "Offline";
-		}
-
-		return device.is_broadcasting ? "Broadcasting" : "Idle";
+		return (now - lastUpdatedTime > maxAllowedDelay) ? "Offline" : "Broadcasting";
 	}
 
 	// sort devices by status
 	const sorted_devices_by_status = [...devices].sort((device_a, device_b) => {
-		const status_order: Record<"Broadcasting" | "Idle" | "Offline", number> = {
+		const status_order: Record<"Broadcasting" | "Offline", number> = {
 			Broadcasting: 0,
-			Idle: 1,
-			Offline: 2,
+			Offline: 1,
 		};
 
-		const status_a = getDeviceStatus(device_a) as "Broadcasting" | "Idle" | "Offline";
-		const status_b = getDeviceStatus(device_b) as "Broadcasting" | "Idle" | "Offline";
+		const status_a = getDeviceStatus(device_a) as "Broadcasting" | "Offline";
+		const status_b = getDeviceStatus(device_b) as "Broadcasting" | "Offline";
 
 		if (status_order[status_a] !== status_order[status_b]) {
 			return status_order[status_a] - status_order[status_b];
@@ -115,7 +109,6 @@ export default function Home() {
 	// count device statuses
 	const status_counts = {
 		Broadcasting: 0,
-		Idle: 0,
 		Offline: 0,
 	};
 	
@@ -131,41 +124,34 @@ export default function Home() {
 					Dashboard
 				</h1>
 				<div className="flex w-full h-24 gap-x-10 justify-between items-center">
-					<div className="flex-1 flex h-full justify-center items-center bg-gray-900 rounded-md border border-gray-700 text-4xl text-green-400 gap-2">
-						<span className="material-symbols-outlined !text-5xl">
+					<div className="flex-1 flex h-full justify-center items-center bg-gray-900 rounded-md text-4xl text-green-400 gap-2">
+						<span className="material-symbols-rounded !text-5xl">
 							sensors
 						</span>
 						<span className="text-green-400">Broadcasting:</span> 
   						<span className="text-white">{status_counts.Broadcasting}</span>
 					</div>
-					<div className="flex-1 flex h-full justify-center items-center bg-gray-900 rounded-md border border-gray-700 text-4xl text-orange-400 gap-2">
-						<span className="material-symbols-outlined !text-5xl">
+					<div className="flex-1 flex h-full justify-center items-center bg-gray-900 rounded-md text-4xl text-red-400 gap-2">
+						<span className="material-symbols-rounded !text-5xl">
 							sensors_off
-						</span>
-						<span className="text-orange-400">Idle:</span> 
-  						<span className="text-white">{status_counts.Idle}</span>
-					</div>
-					<div className="flex-1 flex h-full justify-center items-center bg-gray-900 rounded-md border border-gray-700 text-4xl text-red-400 gap-2">
-						<span className="material-symbols-outlined !text-5xl">
-							exclamation
 						</span>
 						<span className="text-red-400">Offline:</span> 
   						<span className="text-white">{status_counts.Offline}</span>
 					</div>
 				</div>
-				<div className="w-full overflow-x-auto rounded-md border border-gray-700">
-					<table className="w-full text-left border-collapse">
-						<thead className="bg-gray-900 border-b border-gray-700">
+				<div className="w-full overflow-x-auto rounded-md">
+					<table className="w-full text-left">
+						<thead className="bg-gray-900">
 							<tr>
-								<th className="px-4 py-2 text-gray-200">Status</th>
-								<th className="px-4 py-2 text-gray-200">Device ID</th>
-								<th className="px-4 py-2 text-gray-200">Firmware version</th>
-								<th className="px-4 py-2 text-gray-200">CPU temperature</th>
-								<th className="px-4 py-2 text-gray-200">WiFi SSID</th>
-								<th className="px-4 py-2 text-gray-200">WiFi RSSI</th>
-								<th className="px-4 py-2 text-gray-200">Uptime</th>
-								<th className="px-4 py-2 text-gray-200">Last updated</th>
-								<th className="px-4 py-2 text-gray-200">Update interval</th>
+								<th className="px-4 py-3 text-gray-200">Status</th>
+								<th className="px-4 py-3 text-gray-200">Device ID</th>
+								<th className="px-4 py-3 text-gray-200">Firmware version</th>
+								<th className="px-4 py-3 text-gray-200">CPU temperature</th>
+								<th className="px-4 py-3 text-gray-200">WiFi SSID</th>
+								<th className="px-4 py-3 text-gray-200">WiFi RSSI</th>
+								<th className="px-4 py-3 text-gray-200">Uptime</th>
+								<th className="px-4 py-3 text-gray-200">Last updated</th>
+								<th className="px-4 py-3 text-gray-200">Update interval</th>
 							</tr>
 						</thead>
 						<tbody className="bg-gray-800 divide-y divide-gray-700">
@@ -179,42 +165,40 @@ export default function Home() {
 								sorted_devices_by_status.map((device) => {
 									const device_status = getDeviceStatus(device);
 									const is_device_broadcasting = device_status == "Broadcasting";
-									const is_device_idle = device_status == "Idle";
 									const is_device_offline = device_status == "Offline";
 
 									return (
 										<tr key={device.device_id}>
 											<td
-												className={`px-4 py-2 flex items-center gap-2 ${is_device_broadcasting ? "text-green-400" : is_device_idle ? "text-orange-400" : "text-red-400"
-													}`}
+												className={`px-4 py-3 flex items-center gap-2 ${is_device_broadcasting ? "text-green-400" : "text-red-400"}`}
 											>
-												<span className="material-symbols-outlined">
-													{is_device_broadcasting ? "sensors" : is_device_idle ? "sensors_off" : "exclamation"}
+												<span className="material-symbols-rounded">
+													{is_device_broadcasting ? "sensors" : "sensors_off"}
 												</span>
 												{device_status}
 											</td>
-											<td className="px-4 py-2 text-gray-500">
+											<td className="px-4 py-3 text-gray-500">
 												{checkNull(device.device_id)}
 											</td>
-											<td className="px-4 py-2 text-gray-500">
+											<td className="px-4 py-3 text-gray-500">
 												{checkNull(device.firmware_version)}
 											</td>
-											<td className="px-4 py-2 text-gray-500">
+											<td className="px-4 py-3 text-gray-500">
 												{is_device_offline ? "-" : checkNull(device.cpu_temperature, "°C")}
 											</td>
-											<td className="px-4 py-2 text-gray-500">
+											<td className="px-4 py-3 text-gray-500">
 												{is_device_offline ? "-" : checkNull(device.wifi_ssid)}
 											</td>
-											<td className="px-4 py-2 text-gray-500">
+											<td className="px-4 py-3 text-gray-500">
 												{is_device_offline ? "-" : checkNull(device.wifi_rssi, " dBm")}
 											</td>
-											<td className="px-4 py-2 whitespace-nowrap text-gray-500">
+											<td className="px-4 py-3 whitespace-nowrap text-gray-500">
 												{(device.booted == null || is_device_offline) ? "-" : formatTimestamp(device.booted)}
 											</td>
-											<td className="px-4 py-2 whitespace-nowrap text-gray-500">
+											<td className="px-4 py-3 whitespace-nowrap text-gray-500">
 												{device.last_updated == null ? "-" : formatTimestamp(device.last_updated) + " ago"}
 											</td>
-											<td className="px-4 py-2 whitespace-nowrap text-gray-500">
+											<td className="px-4 py-3 whitespace-nowrap text-gray-500">
 												{device.update_interval == null ? "-" : formatInterval(device.update_interval)}
 											</td>
 										</tr>
