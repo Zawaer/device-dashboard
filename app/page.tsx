@@ -130,6 +130,29 @@ export default function Home() {
 				<h1 className="text-4xl font-bold text-white">
 					Dashboard
 				</h1>
+				<div className="flex w-full h-24 gap-x-10 justify-between items-center">
+					<div className="flex-1 flex h-full justify-center items-center bg-gray-900 rounded-md border border-gray-700 text-4xl text-green-400 gap-2">
+						<span className="material-symbols-outlined !text-5xl">
+							sensors
+						</span>
+						<span className="text-green-400">Broadcasting:</span> 
+  						<span className="text-white">{status_counts.Broadcasting}</span>
+					</div>
+					<div className="flex-1 flex h-full justify-center items-center bg-gray-900 rounded-md border border-gray-700 text-4xl text-orange-400 gap-2">
+						<span className="material-symbols-outlined !text-5xl">
+							sensors_off
+						</span>
+						<span className="text-orange-400">Idle:</span> 
+  						<span className="text-white">{status_counts.Idle}</span>
+					</div>
+					<div className="flex-1 flex h-full justify-center items-center bg-gray-900 rounded-md border border-gray-700 text-4xl text-red-400 gap-2">
+						<span className="material-symbols-outlined !text-5xl">
+							exclamation
+						</span>
+						<span className="text-red-400">Offline:</span> 
+  						<span className="text-white">{status_counts.Offline}</span>
+					</div>
+				</div>
 				<div className="w-full overflow-x-auto rounded-md border border-gray-700">
 					<table className="w-full text-left border-collapse">
 						<thead className="bg-gray-900 border-b border-gray-700">
