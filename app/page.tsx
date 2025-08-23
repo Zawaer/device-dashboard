@@ -308,8 +308,8 @@ export default function Home() {
                                             <span className="text-gray-400">{status_date ?? "-"}</span>
                                         </span>
                                     </div>
-                                    {/* RSSI, CPU temperature, last updated and update interval */}
-                                    <div className="grid grid-cols-5 gap-15 ml-auto min-w-[540px]">
+                                    {/* Metrics grid*/}
+                                    <div className="grid grid-cols-6 gap-15 ml-auto min-w-[680px] items-center">
 										{/* RSSI */}
 										<div
 											className="flex items-center gap-3 w-[100px]"
@@ -409,6 +409,20 @@ export default function Home() {
 											<span className="text-gray-400 text-base text-left w-full block">
 												{device.firmware_version ?? "-"}
 											</span>
+										</div>
+										{/* More button */}
+										<div className="flex items-center justify-center h-full w-full">
+											<button
+												type="button"
+												className="rounded-full hover:bg-slate-700 w-10 h-10 flex items-center justify-center transition"
+												onClick={() => {/* set some modal state here, e.g. set_selected_device(device) */}}
+												data-tooltip-id="main-tooltip"
+												data-tooltip-content="Show more details (COMING SOON)"
+											>
+												<span className="material-symbols-rounded text-gray-400 text-2xl select-none">
+													more_horiz
+												</span>
+											</button>
 										</div>
 									</div>
                                 </div>
