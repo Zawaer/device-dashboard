@@ -235,8 +235,13 @@ export default function Home() {
                 {/* Device list */}
                 <div className="w-full flex flex-col overflow-hidden rounded-2xl border border-gray-700">
                     {loading ? (
-                        <div className="w-full flex justify-center py-10 text-gray-400">Loading...</div>
-                    ) : sorted_devices.length === 0 ? (
+						<div className="w-full flex flex-col items-center justify-center py-20">
+							<span className="material-symbols-rounded animate-spin text-5xl text-blue-500 mb-4">
+								progress_activity
+							</span>
+							<span className="text-gray-300 text-xl font-medium">Loading devices…</span>
+						</div>
+					) : sorted_devices.length === 0 ? (
                         <div className="w-full flex justify-center py-10 text-gray-400 items-center">
                             <span className="material-symbols-rounded align-middle text-2xl mr-2 select-none">
                                 sentiment_dissatisfied
@@ -411,7 +416,7 @@ export default function Home() {
 											</span>
 										</div>
 										{/* More button */}
-										<div className="flex items-center justify-center h-full w-full">
+										<div className="flex items-center justify-center h-full w-[100px]">
 											<button
 												type="button"
 												className="rounded-full hover:bg-slate-700 w-10 h-10 flex items-center justify-center transition"
