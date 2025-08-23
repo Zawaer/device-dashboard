@@ -309,32 +309,71 @@ export default function Home() {
                                         </span>
                                     </div>
                                     {/* RSSI, CPU temperature, last updated and update interval */}
-                                    <div className="grid grid-cols-4 gap-15 ml-auto min-w-[440px]">
+                                    <div className="grid grid-cols-5 gap-15 ml-auto min-w-[540px]">
 										{/* RSSI */}
 										<div
-											className="flex items-center gap-2 w-[100px]"
+											className="flex items-center gap-3 w-[100px]"
 											data-tooltip-id="main-tooltip"
 											data-tooltip-content="WiFi signal strength"
 										>
-											<span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
-												rss_feed
+											{/* Only show faded wifi icon if not offline */}
+											{!is_device_offline && (
+												<span className="material-symbols-rounded text-gray-400/30 text-xl select-none flex-shrink-0 w-6 text-center absolute">
+													wifi
+												</span>
+											)}
+											{/* Overlay the colored/active wifi icon */}
+											<span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center relative">
+												{is_device_offline
+													? "wifi_off"
+													: Number(device.wifi_rssi) >= -55
+														? "wifi"
+														: Number(device.wifi_rssi) > -75
+															? "wifi_2_bar"
+															: "wifi_1_bar"}
 											</span>
-											<span className="text-gray-400 text-base">{is_device_offline ? "-" : check_null(device.wifi_rssi, " dBm")}</span>
+											<span className="text-gray-400 text-base">
+												{is_device_offline ? "-" : check_null(device.wifi_rssi, " dBm")}
+											</span>
 										</div>
 										{/* CPU temperature */}
 										<div
-											className="flex items-center gap-2 w-[100px]"
+											className="flex items-center gap-1 w-[100px]"
 											data-tooltip-id="main-tooltip"
 											data-tooltip-content="CPU Temperature"
 										>
-											<span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
+											<span
+												className={
+													"material-symbols-rounded text-xl select-none flex-shrink-0 w-6 text-center " +
+													(
+														temp_text === "-" 
+															? "text-gray-400"
+															: Number(device.cpu_temperature) >= 55 || Number(device.cpu_temperature) <= 15
+																? "text-red-400"
+																: "text-gray-400"
+													)
+												}
+											>
 												thermometer
 											</span>
-											<span className="text-gray-400 text-base">{temp_text}</span>
+											<span
+												className={
+													"text-base " +
+													(
+														temp_text === "-" 
+															? "text-gray-400"
+															: Number(device.cpu_temperature) >= 55 || Number(device.cpu_temperature) <= 10
+																? "text-red-400"
+																: "text-gray-400"
+													)
+												}
+											>
+												{temp_text}
+											</span>
 										</div>
 										{/* Last updated */}
 										<div
-											className="flex items-center gap-2 w-[120px]"
+											className="flex items-center gap-2 w-[100px]"
 											data-tooltip-id="main-tooltip"
 											data-tooltip-content="The last time this device sent a status update"
 										>
@@ -349,13 +388,26 @@ export default function Home() {
 										<div
 											className="flex items-center gap-2 w-[100px]"
 											data-tooltip-id="main-tooltip"
-											data-tooltip-content="How often the device is configured to send status updates"
+											data-tooltip-content="How often this device is configured to send status updates"
 										>
 											<span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
 												update
 											</span>
 											<span className="text-gray-400 text-base text-left w-full block">
 												{interval_text}
+											</span>
+										</div>
+										{/* Firmware version */}
+										<div
+											className="flex items-center gap-2 w-[100px]"
+											data-tooltip-id="main-tooltip"
+											data-tooltip-content="The current firmware version running on this device"
+										>
+											<span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
+												memory
+											</span>
+											<span className="text-gray-400 text-base text-left w-full block">
+												{device.firmware_version ?? "-"}
 											</span>
 										</div>
 									</div>
