@@ -171,7 +171,8 @@ export default function Home() {
         <div className="flex flex-col min-h-screen bg-slate-900">
             <div className="flex flex-col m-[80px] gap-10 overflow-x-auto justify-start items-start ">
                 {/* Status count boxes at the very top */}
-                <div className="flex w-full h-24 gap-x-10 justify-between items-center mb-2">
+                {/*
+				<div className="flex w-full h-24 gap-x-10 justify-between items-center mb-2">
                     <div className="flex flex-1 h-full justify-center items-center bg-slate-800 rounded-md text-4xl gap-2">
                         <span className="material-symbols-rounded text-green-400 !text-5xl select-none">
                             sensors
@@ -187,6 +188,7 @@ export default function Home() {
                         <span className="text-gray-200">{status_counts.Offline}</span>
                     </div>
                 </div>
+				*/}
                 {/* Devices title and controls */}
                 <div className="w-full flex justify-between items-center gap-4">
                     <h1 className="text-5xl font-bold text-white h-11 flex items-center">
@@ -305,7 +307,7 @@ export default function Home() {
                                                     display: "inline-block",
                                                     verticalAlign: "middle",
                                                     position: "relative",
-                                                    top: "1px",
+                                                    top: "2px",
                                                 }}
                                             >
                                                 ●
