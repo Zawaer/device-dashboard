@@ -10,7 +10,7 @@ const supabase = createClient(
 );
 
 // helper for dynamic sort order labels
-function get_sort_order_labels(sort_by: "device_id" | "status" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi") {
+function get_sort_order_labels(sort_by: "device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi") {
     switch (sort_by) {
         case "uptime":
         case "device_id":
@@ -19,8 +19,6 @@ function get_sort_order_labels(sort_by: "device_id" | "status" | "uptime" | "fir
             return { ascending: "Low to high", descending: "High to low" };
         case "wifi_rssi":
             return { ascending: "Weak to strong", descending: "Strong to weak" };
-        case "status":
-            return { ascending: "Online first", descending: "Offline first" };
         default:
             return { ascending: "Ascending", descending: "Descending" };
     }
@@ -31,7 +29,7 @@ export default function Home() {
     const [loading, set_loading] = useState(true);
 
     const [search, set_search] = useState("");
-    const [sort_by, set_sort_by] = useState<"device_id" | "status" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi">("device_id");
+    const [sort_by, set_sort_by] = useState<"device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi">("device_id");
     const [sort_order, set_sort_order] = useState<"ascending" | "descending">("ascending");
     const [online_first, set_online_first] = useState(true);
 
@@ -118,15 +116,7 @@ export default function Home() {
     // sorting logic
     function compareDevices(a: any, b: any) {
         let result = 0;
-        if (sort_by === "status") {
-            const status_order: Record<"Broadcasting" | "Offline", number> = {
-                Broadcasting: 0,
-                Offline: 1,
-            };
-            const status_a = get_device_status(a) as "Broadcasting" | "Offline";
-            const status_b = get_device_status(b) as "Broadcasting" | "Offline";
-            result = status_order[status_a] - status_order[status_b];
-        } else if (sort_by === "device_id") {
+        if (sort_by === "device_id") {
             const id_a = a.device_id ?? "";
             const id_b = b.device_id ?? "";
             result = id_a.localeCompare(id_b, undefined, { numeric: true });
@@ -239,18 +229,20 @@ export default function Home() {
                             </span>
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
-                            {loading ? (
-                                <span className="block h-12 w-24 bg-gray-700 rounded-xl animate-pulse mb-2" />
-                            ) : (
-                                <span
-                                    className="text-6xl font-bold text-white leading-none"
-                                    data-tooltip-id="main-tooltip"
-                                    data-tooltip-content="Estimated daily electricity usage for all ESP32 devices"
-                                >
-                                    {daily_kwh_display} kWh
-                                </span>
-                            )}
-                            <span className="text-lg text-gray-300 mt-2">Daily electricity usage</span>
+                            <span
+                                data-tooltip-id="main-tooltip"
+                                data-tooltip-content="Estimated daily power consumption of all ESP32 devices"
+                                className="flex flex-col items-start"
+                            >
+                                {loading ? (
+                                    <span className="block h-12 w-24 bg-gray-700 rounded-xl animate-pulse mb-2" />
+                                ) : (
+                                    <span className="text-6xl font-bold text-white leading-none">
+                                        {daily_kwh_display}
+                                    </span>
+                                )}
+                                <span className="text-lg text-gray-300 mt-2 whitespace-nowrap">kWh used daily</span>
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -264,7 +256,7 @@ export default function Home() {
                         Device list
                     </h1>
                     <div className="flex items-center gap-4">
-                        <div className="relative flex items-center" style={{ minWidth: 180 }}>
+                        <div className="relative flex items-center" style={{ minWidth: 140, maxWidth: 220 }}>
                             <span className="material-symbols-rounded absolute left-3 text-gray-500 select-none">
                                 search
                             </span>
@@ -273,39 +265,48 @@ export default function Home() {
                                 inputMode="numeric"
                                 pattern="[0-9]*"
                                 placeholder="Search by device ID"
-                                className="h-11 pl-10 pr-4 py-2 rounded-xl bg-slate-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
+                                className="h-11 pl-10 pr-3 py-2 rounded-xl bg-slate-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
                                 value={search}
                                 onChange={e => {
                                     const val = e.target.value.replace(/[^0-9]/g, "");
                                     set_search(val);
                                 }}
-                                style={{ minWidth: 180 }}
+                                style={{ minWidth: 140, maxWidth: 220 }}
                             />
                         </div>
-                        <select
-                            className="h-11 px-4 py-2 pr-8 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
-                            value={sort_by}
-                            onChange={e => set_sort_by(e.target.value as any)}
-                            style={{ minWidth: 180, backgroundPosition: 'right 1.5rem center' }}
-                        >
-                            <option value="device_id">Sort by device ID</option>
-                            <option value="status">Sort by status</option>
-                            <option value="uptime">Sort by uptime</option>
-                            <option value="firmware_version">Sort by firmware version</option>
-                            <option value="cpu_temperature">Sort by temperature</option>
-                            <option value="wifi_rssi">Sort by WiFi strength</option>
-                        </select>
-                        <select
-                            className="h-11 px-4 py-2 pr-8 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
-                            value={sort_order}
-                            onChange={e => set_sort_order(e.target.value as "ascending" | "descending")}
-                            style={{ minWidth: 150, backgroundPosition: 'right 1.5rem center' }}
-                        >
-                            <option value="ascending">{sort_order_labels.ascending}</option>
-                            <option value="descending">{sort_order_labels.descending}</option>
-                        </select>
+                        <div className="relative flex items-center" style={{ minWidth: 180 }}>
+                            <span className="material-symbols-rounded absolute left-3 text-gray-500 select-none pointer-events-none">
+                                sort
+                            </span>
+                            <select
+                                className="h-11 pl-10 pr-8 py-2 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700 appearance-none cursor-pointer"
+                                value={sort_by}
+                                onChange={e => set_sort_by(e.target.value as any)}
+                                style={{ minWidth: 180, backgroundPosition: 'right 1.5rem center' }}
+                            >
+                                <option value="device_id">Sort by device ID</option>
+                                <option value="uptime">Sort by uptime</option>
+                                <option value="firmware_version">Sort by firmware version</option>
+                                <option value="cpu_temperature">Sort by temperature</option>
+                                <option value="wifi_rssi">Sort by WiFi strength</option>
+                            </select>
+                        </div>
+                        <div className="relative flex items-center" style={{ minWidth: 150 }}>
+                            <span className="material-symbols-rounded absolute left-3 text-gray-500 select-none pointer-events-none">
+                                swap_vert
+                            </span>
+                            <select
+                                className="h-11 pl-10 pr-8 py-2 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700 appearance-none cursor-pointer"
+                                value={sort_order}
+                                onChange={e => set_sort_order(e.target.value as 'ascending' | 'descending')}
+                                style={{ minWidth: 150, backgroundPosition: 'right 1.5rem center' }}
+                            >
+                                <option value="ascending">{sort_order_labels.ascending}</option>
+                                <option value="descending">{sort_order_labels.descending}</option>
+                            </select>
+                        </div>
                         <label className="flex items-center gap-3 text-gray-300 text-base cursor-pointer select-none">
-                            <span>Always show online first</span>
+                            <span>Show online first</span>
                             <span className="relative inline-block w-11 h-6 align-middle select-none">
                                 <input
                                     type="checkbox"
@@ -392,7 +393,7 @@ export default function Home() {
                                                     display: "inline-block",
                                                     verticalAlign: "middle",
                                                     position: "relative",
-                                                    top: "2px",
+                                                    top: "1px",
                                                 }}
                                             >
                                                 ●
@@ -506,7 +507,7 @@ export default function Home() {
                                         <div className="flex items-center justify-center h-full w-10">
                                             <button
                                                 type="button"
-                                                className="rounded-full hover:bg-slate-700 w-10 h-10 flex items-center justify-center transition"
+                                                className="rounded-full hover:bg-slate-700 w-10 h-10 flex items-center justify-center transition cursor-pointer"
                                                 onClick={() => {/* set some modal state here, e.g. set_selected_device(device) */}}
                                                 data-tooltip-id="main-tooltip"
                                                 data-tooltip-content="Show more details (COMING SOON)"
