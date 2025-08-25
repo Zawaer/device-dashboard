@@ -304,14 +304,18 @@ export default function Home() {
                             <option value="ascending">{sort_order_labels.ascending}</option>
                             <option value="descending">{sort_order_labels.descending}</option>
                         </select>
-                        <label className="flex items-center gap-2 text-gray-300 text-base cursor-pointer select-none">
-                            <input
-                                type="checkbox"
-                                checked={online_first}
-                                onChange={e => set_online_first(e.target.checked)}
-                                className="accent-blue-500 w-4 h-4"
-                            />
-                            Always show online first
+                        <label className="flex items-center gap-3 text-gray-300 text-base cursor-pointer select-none">
+                            <span>Always show online first</span>
+                            <span className="relative inline-block w-11 h-6 align-middle select-none">
+                                <input
+                                    type="checkbox"
+                                    checked={online_first}
+                                    onChange={e => set_online_first(e.target.checked)}
+                                    className="sr-only peer"
+                                />
+                                <span className="block bg-slate-700 peer-checked:bg-blue-500 w-11 h-6 rounded-full transition-colors duration-200"></span>
+                                <span className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow-md transition-transform duration-200 peer-checked:translate-x-5"></span>
+                            </span>
                         </label>
                     </div>
                 </div>
