@@ -171,7 +171,7 @@ export default function Home() {
         <div className="flex flex-col min-h-screen bg-slate-900">
             <div className="flex flex-col m-[80px] gap-10 overflow-x-auto justify-start items-start ">
                 {/* Status count boxes at the very top */}
-                <div className="flex w-full gap-x-10 mb-20">
+                <div className="flex w-full gap-x-10">
                     {/* Up devices */}
                     <div className="flex items-center bg-slate-800 rounded-lg p-6 flex-1 min-w-0">
                         {/* Status circle with glow effect */}
@@ -198,8 +198,13 @@ export default function Home() {
                     </div>
                     {/* Energy usage */}
                     <div className="flex items-center bg-slate-800 rounded-lg p-6 flex-1 min-w-0">
-                        <div className="flex-shrink-0 flex items-center justify-center mr-12 ml-8" style={{ width: 40, height: 40 }}>
-                            <span className="material-symbols-rounded text-green-400 text-5xl select-none">energy_savings_leaf</span>
+                        <div className="flex-shrink-0 flex items-center justify-center mr-10 ml-8" style={{ width: 40, height: 40 }}>
+                            <span
+                                className="material-symbols-rounded text-yellow-400"
+                                style={{ fontSize: "6rem", width: "6rem", height: "6rem", lineHeight: "6rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+                            >
+                                energy_savings_leaf
+                            </span>
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             <span className="text-6xl font-bold text-white leading-none">-</span>
@@ -208,7 +213,7 @@ export default function Home() {
                     </div>
                 </div>
                 {/* Big panel below the boxes */}
-                <div className="w-full bg-slate-800 rounded-2xl min-h-[220px] mb-12 flex items-center justify-center text-2xl text-gray-400">
+                <div className="w-full bg-slate-800 rounded-2xl min-h-[280px] mb-12 flex items-center justify-center text-2xl text-gray-400">
                     {/* Empty panel for future content */}
                 </div>
                 {/* Devices title and controls */}
