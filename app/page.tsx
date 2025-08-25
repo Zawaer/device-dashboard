@@ -171,24 +171,46 @@ export default function Home() {
         <div className="flex flex-col min-h-screen bg-slate-900">
             <div className="flex flex-col m-[80px] gap-10 overflow-x-auto justify-start items-start ">
                 {/* Status count boxes at the very top */}
-                {/*
-				<div className="flex w-full h-24 gap-x-10 justify-between items-center mb-2">
-                    <div className="flex flex-1 h-full justify-center items-center bg-slate-800 rounded-md text-4xl gap-2">
-                        <span className="material-symbols-rounded text-green-400 !text-5xl select-none">
-                            sensors
-                        </span>
-                        <span className="text-green-400">Broadcasting:</span>
-                        <span className="text-gray-200">{status_counts.Broadcasting}</span>
+                <div className="flex w-full gap-x-10 mb-20">
+                    {/* Up devices */}
+                    <div className="flex items-center bg-slate-800 rounded-lg p-6 flex-1 min-w-0">
+                        {/* Status circle with glow effect */}
+                        <div className="relative flex-shrink-0 flex items-center justify-center mr-12 ml-8" style={{ width: 40, height: 40 }}>
+                            <span className={"absolute w-24 h-24 rounded-full bg-green-400/20"} aria-hidden="true" />
+                            <span className={"w-8 h-8 rounded-full bg-green-400"} aria-hidden="true" />
+                        </div>
+                        <div className="flex flex-col flex-1 justify-center items-start">
+                            <span className="text-6xl font-bold text-white leading-none">{status_counts.Broadcasting}</span>
+                            <span className="text-lg text-gray-300 mt-2">Up devices</span>
+                        </div>
                     </div>
-                    <div className="flex flex-1 h-full justify-center items-center bg-slate-800 rounded-md text-4xl gap-2">
-                        <span className="material-symbols-rounded text-red-400 !text-5xl select-none">
-                            sensors_off
-                        </span>
-                        <span className="text-red-400">Offline:</span>
-                        <span className="text-gray-200">{status_counts.Offline}</span>
+                    {/* Down devices */}
+                    <div className="flex items-center bg-slate-800 rounded-lg p-6 flex-1 min-w-0">
+                        {/* Status circle with glow effect */}
+                        <div className="relative flex-shrink-0 flex items-center justify-center mr-12 ml-8" style={{ width: 40, height: 40 }}>
+                            <span className={"absolute w-24 h-24 rounded-full bg-red-400/20"} aria-hidden="true" />
+                            <span className={"w-8 h-8 rounded-full bg-red-400"} aria-hidden="true" />
+                        </div>
+                        <div className="flex flex-col flex-1 justify-center items-start">
+                            <span className="text-6xl font-bold text-white leading-none">{status_counts.Offline}</span>
+                            <span className="text-lg text-gray-300 mt-2">Down devices</span>
+                        </div>
+                    </div>
+                    {/* Energy usage */}
+                    <div className="flex items-center bg-slate-800 rounded-lg p-6 flex-1 min-w-0">
+                        <div className="flex-shrink-0 flex items-center justify-center mr-12 ml-8" style={{ width: 40, height: 40 }}>
+                            <span className="material-symbols-rounded text-green-400 text-5xl select-none">energy_savings_leaf</span>
+                        </div>
+                        <div className="flex flex-col flex-1 justify-center items-start">
+                            <span className="text-6xl font-bold text-white leading-none">-</span>
+                            <span className="text-lg text-gray-300 mt-2">Total usage</span>
+                        </div>
                     </div>
                 </div>
-				*/}
+                {/* Big panel below the boxes */}
+                <div className="w-full bg-slate-800 rounded-2xl min-h-[220px] mb-12 flex items-center justify-center text-2xl text-gray-400">
+                    {/* Empty panel for future content */}
+                </div>
                 {/* Devices title and controls */}
                 <div className="w-full flex justify-between items-center gap-4">
                     <h1 className="text-5xl font-bold text-white h-11 flex items-center">
