@@ -167,63 +167,90 @@ export default function Home() {
         status_counts[status as keyof typeof status_counts]++;
     });
 
+    // Reference values
+    const ESP_AVG_CURRENT = 0.0266; // Amps
+    const ESP_VOLTAGE = 5; // Volts
+    const HOURS_PER_DAY = 24;
+
+    // Calculate daily kWh
+    const daily_kwh = devices.length * ESP_AVG_CURRENT * ESP_VOLTAGE * HOURS_PER_DAY / 1000;
+    const daily_kwh_display = daily_kwh.toLocaleString(undefined, { maximumFractionDigits: 3 });
+
     return (
         <div className="flex flex-col min-h-screen bg-slate-900">
-            <div className="flex flex-col m-[80px] gap-10 overflow-x-auto justify-start items-start ">
+            <div className="flex flex-col m-[80px] gap-10 overflow-x-auto justify-start items-start">
                 {/* Status count boxes at the very top */}
                 <div className="flex w-full gap-x-10">
                     {/* Up devices */}
-                    <div className="flex items-center bg-slate-800 rounded-lg p-6 flex-1 min-w-0">
+                    <div className="flex items-center bg-slate-800 rounded-xl p-10 flex-1 min-w-0 border border-gray-700">
                         {/* Status circle with glow effect */}
                         <div className="relative flex-shrink-0 flex items-center justify-center mr-12 ml-8" style={{ width: 40, height: 40 }}>
                             <span className={"absolute w-24 h-24 rounded-full bg-green-400/20"} aria-hidden="true" />
                             <span className={"w-8 h-8 rounded-full bg-green-400"} aria-hidden="true" />
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
-                            <span className="text-6xl font-bold text-white leading-none">{status_counts.Broadcasting}</span>
+                            {loading ? (
+                                <span className="block h-12 w-24 bg-gray-700 rounded-xl animate-pulse mb-2" />
+                            ) : (
+                                <span className="text-6xl font-bold text-white leading-none">{status_counts.Broadcasting}</span>
+                            )}
                             <span className="text-lg text-gray-300 mt-2">Up devices</span>
                         </div>
                     </div>
                     {/* Down devices */}
-                    <div className="flex items-center bg-slate-800 rounded-lg p-6 flex-1 min-w-0">
+                    <div className="flex items-center bg-slate-800 rounded-xl p-10 flex-1 min-w-0 border border-gray-700">
                         {/* Status circle with glow effect */}
                         <div className="relative flex-shrink-0 flex items-center justify-center mr-12 ml-8" style={{ width: 40, height: 40 }}>
                             <span className={"absolute w-24 h-24 rounded-full bg-red-400/20"} aria-hidden="true" />
                             <span className={"w-8 h-8 rounded-full bg-red-400"} aria-hidden="true" />
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
-                            <span className="text-6xl font-bold text-white leading-none">{status_counts.Offline}</span>
+                            {loading ? (
+                                <span className="block h-12 w-24 bg-gray-700 rounded-xl animate-pulse mb-2" />
+                            ) : (
+                                <span className="text-6xl font-bold text-white leading-none">{status_counts.Offline}</span>
+                            )}
                             <span className="text-lg text-gray-300 mt-2">Down devices</span>
                         </div>
                     </div>
                     {/* Energy usage */}
-                    <div className="flex items-center bg-slate-800 rounded-lg p-6 flex-1 min-w-0">
+                    <div className="flex items-center bg-slate-800 rounded-xl p-10 flex-1 min-w-0 border border-gray-700">
                         <div className="flex-shrink-0 flex items-center justify-center mr-10 ml-8" style={{ width: 40, height: 40 }}>
                             <span
-                                className="material-symbols-rounded text-yellow-400"
-                                style={{ fontSize: "6rem", width: "6rem", height: "6rem", lineHeight: "6rem", display: "flex", alignItems: "center", justifyContent: "center" }}
+                                className="material-symbols-rounded text-yellow-400 select-none"
+                                style={{ fontSize: "7rem", width: "7rem", height: "7rem", lineHeight: "7rem", display: "flex", alignItems: "center", justifyContent: "center" }}
                             >
                                 energy_savings_leaf
                             </span>
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
-                            <span className="text-6xl font-bold text-white leading-none">-</span>
-                            <span className="text-lg text-gray-300 mt-2">Total usage</span>
+                            {loading ? (
+                                <span className="block h-12 w-24 bg-gray-700 rounded-xl animate-pulse mb-2" />
+                            ) : (
+                                <span
+                                    className="text-6xl font-bold text-white leading-none"
+                                    data-tooltip-id="main-tooltip"
+                                    data-tooltip-content="Estimated daily electricity usage for all ESP32 devices"
+                                >
+                                    {daily_kwh_display} kWh
+                                </span>
+                            )}
+                            <span className="text-lg text-gray-300 mt-2">Daily electricity usage</span>
                         </div>
                     </div>
                 </div>
                 {/* Big panel below the boxes */}
-                <div className="w-full bg-slate-800 rounded-2xl min-h-[280px] mb-12 flex items-center justify-center text-2xl text-gray-400">
+                <div className="w-full bg-slate-800 rounded-xl min-h-[280px] mb-20 flex items-center justify-center text-2xl text-gray-400 border border-gray-700">
                     {/* Empty panel for future content */}
                 </div>
                 {/* Devices title and controls */}
                 <div className="w-full flex justify-between items-center gap-4">
                     <h1 className="text-5xl font-bold text-white h-11 flex items-center">
-                        Devices
+                        Device list
                     </h1>
                     <div className="flex items-center gap-4">
                         <div className="relative flex items-center" style={{ minWidth: 180 }}>
-                            <span className="material-symbols-rounded absolute left-3 text-gray-500  select-none">
+                            <span className="material-symbols-rounded absolute left-3 text-gray-500 select-none">
                                 search
                             </span>
                             <input
@@ -231,7 +258,7 @@ export default function Home() {
                                 inputMode="numeric"
                                 pattern="[0-9]*"
                                 placeholder="Search by device ID"
-                                className="h-11 pl-10 pr-4 py-2 rounded-md bg-slate-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
+                                className="h-11 pl-10 pr-4 py-2 rounded-xl bg-slate-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
                                 value={search}
                                 onChange={e => {
                                     const val = e.target.value.replace(/[^0-9]/g, "");
@@ -241,7 +268,7 @@ export default function Home() {
                             />
                         </div>
                         <select
-                            className="h-11 px-4 py-2 pr-8 rounded-md bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
+                            className="h-11 px-4 py-2 pr-8 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
                             value={sort_by}
                             onChange={e => set_sort_by(e.target.value as "device_id" | "status" | "uptime")}
                             style={{ minWidth: 180, backgroundPosition: 'right 1.5rem center' }}
@@ -251,7 +278,7 @@ export default function Home() {
                             <option value="uptime">Sort by uptime</option>
                         </select>
                         <select
-                            className="h-11 px-4 py-2 pr-8 rounded-md bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
+                            className="h-11 px-4 py-2 pr-8 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
                             value={sort_order}
                             onChange={e => set_sort_order(e.target.value as "ascending" | "descending")}
                             style={{ minWidth: 150, backgroundPosition: 'right 1.5rem center' }}
@@ -262,15 +289,15 @@ export default function Home() {
                     </div>
                 </div>
                 {/* Device list */}
-                <div className="w-full flex flex-col overflow-hidden rounded-2xl border border-gray-700">
+                <div className="w-full flex flex-col overflow-hidden rounded-xl border border-gray-700">
                     {loading ? (
-						<div className="w-full flex flex-col items-center justify-center py-20">
-							<span className="material-symbols-rounded animate-spin text-5xl text-blue-500 mb-4">
-								progress_activity
-							</span>
-							<span className="text-gray-300 text-xl font-medium">Loading devices…</span>
-						</div>
-					) : sorted_devices.length === 0 ? (
+                        <div className="w-full flex flex-col items-center justify-center py-20">
+                            <span className="material-symbols-rounded animate-spin text-5xl text-blue-500 mb-4">
+                                progress_activity
+                            </span>
+                            <span className="text-gray-300 text-xl font-medium">Loading devices…</span>
+                        </div>
+                    ) : sorted_devices.length === 0 ? (
                         <div className="w-full flex justify-center py-10 text-gray-400 items-center">
                             <span className="material-symbols-rounded align-middle text-2xl mr-2 select-none">
                                 sentiment_dissatisfied
@@ -343,122 +370,122 @@ export default function Home() {
                                         </span>
                                     </div>
                                     {/* Metrics grid*/}
-                                    <div className="grid grid-cols-6 gap-15 ml-auto min-w-[680px] items-center">
-										{/* RSSI */}
-										<div
-											className="flex items-center gap-3 w-[100px]"
-											data-tooltip-id="main-tooltip"
-											data-tooltip-content="WiFi signal strength"
-										>
-											{/* Only show faded wifi icon if not offline */}
-											{!is_device_offline && (
-												<span className="material-symbols-rounded text-gray-400/30 text-xl select-none flex-shrink-0 w-6 text-center absolute">
-													wifi
-												</span>
-											)}
-											{/* Overlay the colored/active wifi icon */}
-											<span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center relative">
-												{is_device_offline
-													? "wifi_off"
-													: Number(device.wifi_rssi) >= -55
-														? "wifi"
-														: Number(device.wifi_rssi) > -75
-															? "wifi_2_bar"
-															: "wifi_1_bar"}
-											</span>
-											<span className="text-gray-400 text-base">
-												{is_device_offline ? "-" : check_null(device.wifi_rssi, " dBm")}
-											</span>
-										</div>
-										{/* CPU temperature */}
-										<div
-											className="flex items-center gap-1 w-[100px]"
-											data-tooltip-id="main-tooltip"
-											data-tooltip-content="CPU Temperature"
-										>
-											<span
-												className={
-													"material-symbols-rounded text-xl select-none flex-shrink-0 w-6 text-center " +
-													(
-														temp_text === "-" 
-															? "text-gray-400"
-															: Number(device.cpu_temperature) >= 55 || Number(device.cpu_temperature) <= 15
-																? "text-red-400"
-																: "text-gray-400"
-													)
-												}
-											>
-												thermometer
-											</span>
-											<span
-												className={
-													"text-base " +
-													(
-														temp_text === "-" 
-															? "text-gray-400"
-															: Number(device.cpu_temperature) >= 55 || Number(device.cpu_temperature) <= 10
-																? "text-red-400"
-																: "text-gray-400"
-													)
-												}
-											>
-												{temp_text}
-											</span>
-										</div>
-										{/* Last updated */}
-										<div
-											className="flex items-center gap-2 w-[100px]"
-											data-tooltip-id="main-tooltip"
-											data-tooltip-content="The last time this device sent a status update"
-										>
-											<span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
-												schedule
-											</span>
-											<span className="text-gray-400 text-base text-left w-full block">
-												{device.last_updated ? format_timestamp(device.last_updated) + " ago" : "-"}
-											</span>
-										</div>
-										{/* Update interval */}
-										<div
-											className="flex items-center gap-2 w-[100px]"
-											data-tooltip-id="main-tooltip"
-											data-tooltip-content="How often this device is configured to send status updates"
-										>
-											<span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
-												update
-											</span>
-											<span className="text-gray-400 text-base text-left w-full block">
-												{interval_text}
-											</span>
-										</div>
-										{/* Firmware version */}
-										<div
-											className="flex items-center gap-2 w-[100px]"
-											data-tooltip-id="main-tooltip"
-											data-tooltip-content="The current firmware version running on this device"
-										>
-											<span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
-												memory
-											</span>
-											<span className="text-gray-400 text-base text-left w-full block">
-												{device.firmware_version ?? "-"}
-											</span>
-										</div>
-										{/* More button */}
-										<div className="flex items-center justify-center h-full w-[100px]">
-											<button
-												type="button"
-												className="rounded-full hover:bg-slate-700 w-10 h-10 flex items-center justify-center transition"
-												onClick={() => {/* set some modal state here, e.g. set_selected_device(device) */}}
-												data-tooltip-id="main-tooltip"
-												data-tooltip-content="Show more details (COMING SOON)"
-											>
-												<span className="material-symbols-rounded text-gray-400 text-2xl select-none">
-													more_horiz
-												</span>
-											</button>
-										</div>
-									</div>
+                                    <div className="grid grid-cols-6 gap-8 ml-auto min-w-[680px] items-center">
+                                        {/* RSSI */}
+                                        <div
+                                            className="flex items-center gap-3 w-[100px]"
+                                            data-tooltip-id="main-tooltip"
+                                            data-tooltip-content="WiFi signal strength"
+                                        >
+                                            {/* Only show faded wifi icon if not offline */}
+                                            {!is_device_offline && (
+                                                <span className="material-symbols-rounded text-gray-400/30 text-xl select-none flex-shrink-0 w-6 text-center absolute">
+                                                    wifi
+                                                </span>
+                                            )}
+                                            {/* Overlay the colored/active wifi icon */}
+                                            <span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center relative">
+                                                {is_device_offline
+                                                    ? "wifi_off"
+                                                    : Number(device.wifi_rssi) >= -55
+                                                        ? "wifi"
+                                                        : Number(device.wifi_rssi) > -75
+                                                            ? "wifi_2_bar"
+                                                            : "wifi_1_bar"}
+                                            </span>
+                                            <span className="text-gray-400 text-base">
+                                                {is_device_offline ? "-" : check_null(device.wifi_rssi, " dBm")}
+                                            </span>
+                                        </div>
+                                        {/* CPU temperature */}
+                                        <div
+                                            className="flex items-center gap-1 w-[100px]"
+                                            data-tooltip-id="main-tooltip"
+                                            data-tooltip-content="CPU Temperature"
+                                        >
+                                            <span
+                                                className={
+                                                    "material-symbols-rounded text-xl select-none flex-shrink-0 w-6 text-center " +
+                                                    (
+                                                        temp_text === "-" 
+                                                            ? "text-gray-400"
+                                                            : Number(device.cpu_temperature) >= 55 || Number(device.cpu_temperature) <= 15
+                                                                ? "text-red-400"
+                                                                : "text-gray-400"
+                                                    )
+                                                }
+                                            >
+                                                thermometer
+                                            </span>
+                                            <span
+                                                className={
+                                                    "text-base " +
+                                                    (
+                                                        temp_text === "-" 
+                                                            ? "text-gray-400"
+                                                            : Number(device.cpu_temperature) >= 55 || Number(device.cpu_temperature) <= 10
+                                                                ? "text-red-400"
+                                                                : "text-gray-400"
+                                                    )
+                                                }
+                                            >
+                                                {temp_text}
+                                            </span>
+                                        </div>
+                                        {/* Last updated */}
+                                        <div
+                                            className="flex items-center gap-2 w-[100px]"
+                                            data-tooltip-id="main-tooltip"
+                                            data-tooltip-content="The last time this device sent a status update"
+                                        >
+                                            <span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
+                                                schedule
+                                            </span>
+                                            <span className="text-gray-400 text-base text-left w-full block">
+                                                {device.last_updated ? format_timestamp(device.last_updated) + " ago" : "-"}
+                                            </span>
+                                        </div>
+                                        {/* Update interval */}
+                                        <div
+                                            className="flex items-center gap-2 w-[100px]"
+                                            data-tooltip-id="main-tooltip"
+                                            data-tooltip-content="How often this device is configured to send status updates"
+                                        >
+                                            <span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
+                                                update
+                                            </span>
+                                            <span className="text-gray-400 text-base text-left w-full block">
+                                                {interval_text}
+                                            </span>
+                                        </div>
+                                        {/* Firmware version */}
+                                        <div
+                                            className="flex items-center gap-2 w-[100px]"
+                                            data-tooltip-id="main-tooltip"
+                                            data-tooltip-content="The current firmware version running on this device"
+                                        >
+                                            <span className="material-symbols-rounded text-gray-400 text-xl select-none flex-shrink-0 w-6 text-center">
+                                                memory
+                                            </span>
+                                            <span className="text-gray-400 text-base text-left w-full block">
+                                                {device.firmware_version ?? "-"}
+                                            </span>
+                                        </div>
+                                        {/* More button */}
+                                        <div className="flex items-center justify-center h-full w-10">
+                                            <button
+                                                type="button"
+                                                className="rounded-full hover:bg-slate-700 w-10 h-10 flex items-center justify-center transition"
+                                                onClick={() => {/* set some modal state here, e.g. set_selected_device(device) */}}
+                                                data-tooltip-id="main-tooltip"
+                                                data-tooltip-content="Show more details (COMING SOON)"
+                                            >
+                                                <span className="material-symbols-rounded text-gray-400 text-2xl select-none">
+                                                    more_horiz
+                                                </span>
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         })
@@ -466,23 +493,23 @@ export default function Home() {
                 </div>
             </div>
             <Tooltip
-				id="main-tooltip"
-				place="top"
-				style={{
-					backgroundColor: "#23293a",
-					color: "#e5e7eb",
-					borderRadius: "8px",
-					fontSize: "14px",
-					padding: "8px 14px",
-					boxShadow: "0 4px 24px 0 rgba(0,0,0,0.25)",
-					fontWeight: 500,
-					letterSpacing: "0.01em",
-					zIndex: 50,
-					whiteSpace: "pre-line", // allow wrapping and line breaks
-					maxWidth: "220px", // optional: limit width for better readability
-				}}
-				delayShow={300}
-			/>
+                id="main-tooltip"
+                place="top"
+                style={{
+                    backgroundColor: "#23293a",
+                    color: "#e5e7eb",
+                    borderRadius: "12px",
+                    fontSize: "14px",
+                    padding: "8px 14px",
+                    boxShadow: "0 4px 24px 0 rgba(0,0,0,0.25)",
+                    fontWeight: 500,
+                    letterSpacing: "0.01em",
+                    zIndex: 50,
+                    whiteSpace: "pre-line",
+                    maxWidth: "220px",
+                }}
+                delayShow={300}
+            />
         </div>
     );
 }
