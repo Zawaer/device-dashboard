@@ -10,12 +10,15 @@ const supabase = createClient(
 );
 
 // helper for dynamic sort order labels
-function get_sort_order_labels(sort_by: "device_id" | "status" | "uptime") {
+function get_sort_order_labels(sort_by: "device_id" | "status" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi") {
     switch (sort_by) {
         case "uptime":
-            return { ascending: "Low to high", descending: "High to low" };
         case "device_id":
+        case "firmware_version":
+        case "cpu_temperature":
             return { ascending: "Low to high", descending: "High to low" };
+        case "wifi_rssi":
+            return { ascending: "Weak to strong", descending: "Strong to weak" };
         case "status":
             return { ascending: "Online first", descending: "Offline first" };
         default:
@@ -28,8 +31,9 @@ export default function Home() {
     const [loading, set_loading] = useState(true);
 
     const [search, set_search] = useState("");
-    const [sort_by, set_sort_by] = useState<"device_id" | "status" | "uptime">("device_id");
+    const [sort_by, set_sort_by] = useState<"device_id" | "status" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi">("device_id");
     const [sort_order, set_sort_order] = useState<"ascending" | "descending">("ascending");
+    const [online_first, set_online_first] = useState(true);
 
     useEffect(() => {
         const fetch_data = async () => {
@@ -112,7 +116,7 @@ export default function Home() {
     );
 
     // sorting logic
-    const sorted_devices = [...filtered_devices].sort((a, b) => {
+    function compareDevices(a: any, b: any) {
         let result = 0;
         if (sort_by === "status") {
             const status_order: Record<"Broadcasting" | "Offline", number> = {
@@ -127,32 +131,43 @@ export default function Home() {
             const id_b = b.device_id ?? "";
             result = id_a.localeCompare(id_b, undefined, { numeric: true });
         } else if (sort_by === "uptime") {
+            // Sort by uptime or downtime, regardless of status
             const status_a = get_device_status(a);
             const status_b = get_device_status(b);
-
-            // Always put offline devices at the end
-            if (status_a === "Offline" && status_b !== "Offline") return 1;
-            if (status_a !== "Offline" && status_b === "Offline") return -1;
-
-            // Both online: sort by uptime (booted)
-            if (status_a !== "Offline" && status_b !== "Offline") {
-                const up_a = a.booted ? Date.now() - new Date(a.booted).getTime() : 0;
-                const up_b = b.booted ? Date.now() - new Date(b.booted).getTime() : 0;
-                result = up_a - up_b; // Descending: longest uptime first
-            }
-            // Both offline: sort by downtime (last_updated + update_interval)
-            else if (status_a === "Offline" && status_b === "Offline") {
-                const down_a = a.last_updated
+            let val_a = 0, val_b = 0;
+            if (status_a !== "Offline") {
+                val_a = a.booted ? Date.now() - new Date(a.booted).getTime() : 0;
+            } else {
+                val_a = a.last_updated
                     ? Date.now() - (new Date(a.last_updated).getTime() + parseInt(a.update_interval) * 1000)
                     : 0;
-                const down_b = b.last_updated
+            }
+            if (status_b !== "Offline") {
+                val_b = b.booted ? Date.now() - new Date(b.booted).getTime() : 0;
+            } else {
+                val_b = b.last_updated
                     ? Date.now() - (new Date(b.last_updated).getTime() + parseInt(b.update_interval) * 1000)
                     : 0;
-                result = down_a - down_b; // Descending: longest downtime first
             }
+            result = val_a - val_b;
+        } else if (sort_by === "firmware_version") {
+            result = (a.firmware_version ?? "").localeCompare(b.firmware_version ?? "", undefined, { numeric: true });
+        } else if (sort_by === "cpu_temperature") {
+            result = (a.cpu_temperature ?? 0) - (b.cpu_temperature ?? 0);
+        } else if (sort_by === "wifi_rssi") {
+            result = (a.wifi_rssi ?? -999) - (b.wifi_rssi ?? -999);
         }
         return sort_order === "ascending" ? result : -result;
-    });
+    }
+
+    let sorted_devices: any[] = [];
+    if (online_first) {
+        const online = filtered_devices.filter(d => get_device_status(d) === "Broadcasting").sort(compareDevices);
+        const offline = filtered_devices.filter(d => get_device_status(d) === "Offline").sort(compareDevices);
+        sorted_devices = [...online, ...offline];
+    } else {
+        sorted_devices = [...filtered_devices].sort(compareDevices);
+    }
 
     const sort_order_labels = get_sort_order_labels(sort_by);
 
@@ -270,12 +285,15 @@ export default function Home() {
                         <select
                             className="h-11 px-4 py-2 pr-8 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
                             value={sort_by}
-                            onChange={e => set_sort_by(e.target.value as "device_id" | "status" | "uptime")}
+                            onChange={e => set_sort_by(e.target.value as any)}
                             style={{ minWidth: 180, backgroundPosition: 'right 1.5rem center' }}
                         >
                             <option value="device_id">Sort by device ID</option>
                             <option value="status">Sort by status</option>
                             <option value="uptime">Sort by uptime</option>
+                            <option value="firmware_version">Sort by firmware version</option>
+                            <option value="cpu_temperature">Sort by temperature</option>
+                            <option value="wifi_rssi">Sort by WiFi strength</option>
                         </select>
                         <select
                             className="h-11 px-4 py-2 pr-8 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
@@ -286,6 +304,15 @@ export default function Home() {
                             <option value="ascending">{sort_order_labels.ascending}</option>
                             <option value="descending">{sort_order_labels.descending}</option>
                         </select>
+                        <label className="flex items-center gap-2 text-gray-300 text-base cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={online_first}
+                                onChange={e => set_online_first(e.target.checked)}
+                                className="accent-blue-500 w-4 h-4"
+                            />
+                            Always show online first
+                        </label>
                     </div>
                 </div>
                 {/* Device list */}
