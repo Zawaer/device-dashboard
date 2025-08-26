@@ -263,7 +263,7 @@ export default function Home() {
 
     return (
         <div className="flex flex-col min-h-screen bg-slate-900">
-            <div className="flex flex-col m-[80px] gap-6 overflow-x-auto justify-start items-start">
+            <div className="flex flex-col m-8 gap-6 overflow-x-auto justify-start items-start">
                 {/* New top row: Up, Longest Uptime, Avg WiFi, Avg Temp (each 1/4) */}
                 <div className="flex w-full gap-x-6">
                     {/* Up devices */}
@@ -273,7 +273,7 @@ export default function Home() {
                         data-tooltip-id="main-tooltip"
                         data-tooltip-content="Number of devices currently connected to WiFi"
                     >
-                        <div className="relative flex-shrink-0 flex items-center justify-center mr-8 ml-3" style={{ width: 28, height: 28 }}>
+                        <div className="relative flex-shrink-0 flex items-center justify-center ml-4 mr-9" style={{ width: 28, height: 28 }}>
                             <span className={"absolute w-15 h-15 rounded-full bg-green-400/20"} aria-hidden="true" />
                             <span className={"w-5 h-5 rounded-full bg-green-400"} aria-hidden="true" />
                         </div>
@@ -293,14 +293,14 @@ export default function Home() {
                         data-tooltip-id="main-tooltip"
                         data-tooltip-content="Device with the longest continuous uptime"
                     >
-                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
-                            <span className="material-symbols-rounded text-blue-400 select-none" style={{ fontSize: "3.5rem" }}>
+                        <div className="flex-shrink-0 flex items-center justify-center ml-3 mr-8" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-blue-400 select-none" style={{ fontSize: "4rem" }}>
                                 power
                             </span>
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-28 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : longest_uptime_device ? (
                                 <span className="font-bold leading-none">
                                     <span className="text-white text-xl align-middle">{longest_uptime_device.device_id}: </span>
@@ -319,8 +319,8 @@ export default function Home() {
                         data-tooltip-id="main-tooltip"
                         data-tooltip-content="All-time average WiFi RSSI among all ESP32 devices"
                     >
-                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
-                            <span className="material-symbols-rounded text-blue-300 select-none" style={{ fontSize: "3rem" }}>
+                        <div className="flex-shrink-0 flex items-center justify-center ml-3 mr-8" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-blue-300 select-none" style={{ fontSize: "3.5rem" }}>
                                 wifi
                             </span>
                         </div>
@@ -341,7 +341,7 @@ export default function Home() {
                         data-tooltip-content="All-time average CPU temperature among all ESP32 devices"
                     >
                         <div className="flex-shrink-0 flex items-center justify-center ml-3 mr-8" style={{ width: 28, height: 28 }}>
-                            <span className="material-symbols-rounded text-orange-300 select-none" style={{ fontSize: "3.5rem" }}>
+                            <span className="material-symbols-rounded text-orange-300 select-none" style={{ fontSize: "4rem" }}>
                                 thermometer
                             </span>
                         </div>
@@ -364,7 +364,7 @@ export default function Home() {
                         data-tooltip-id="main-tooltip"
                         data-tooltip-content="Number of devices currently not powered nor connected to WiFi"
                     >
-                        <div className="relative flex-shrink-0 flex items-center justify-center mr-8 ml-3" style={{ width: 28, height: 28 }}>
+                        <div className="relative flex-shrink-0 flex items-center justify-center ml-4 mr-9" style={{ width: 28, height: 28 }}>
                             <span className={"absolute w-15 h-15 rounded-full bg-red-400/20"} aria-hidden="true" />
                             <span className={"w-5 h-5 rounded-full bg-red-400"} aria-hidden="true" />
                         </div>
@@ -384,14 +384,14 @@ export default function Home() {
                         data-tooltip-id="main-tooltip"
                         data-tooltip-content="Device with the longest downtime (since last boot)"
                     >
-                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
-                            <span className="material-symbols-rounded text-red-400 select-none" style={{ fontSize: "3.5rem" }}>
+                        <div className="flex-shrink-0 flex items-center justify-center ml-3 mr-8" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-red-400 select-none" style={{ fontSize: "4rem" }}>
                                 power_off
                             </span>
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-28 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : longest_downtime_device ? (
                                 <span className="font-bold leading-none">
                                     <span className="text-white text-xl align-middle">{longest_downtime_device.device_id}: </span>
@@ -410,8 +410,8 @@ export default function Home() {
                         data-tooltip-id="main-tooltip"
                         data-tooltip-content="Estimated daily power consumption of all ESP32 devices"
                     >
-                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
-                            <span className="material-symbols-rounded text-yellow-400 select-none" style={{ fontSize: "3.5rem" }}>
+                        <div className="flex-shrink-0 flex items-center justify-center ml-3 mr-8" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-yellow-400 select-none" style={{ fontSize: "4rem" }}>
                                 energy_savings_leaf
                             </span>
                         </div>
@@ -431,8 +431,8 @@ export default function Home() {
                         data-tooltip-id="main-tooltip"
                         data-tooltip-content="Latest firmware version released"
                     >
-                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
-                            <span className="material-symbols-rounded text-purple-300 select-none" style={{ fontSize: "3.5rem" }}>
+                        <div className="flex-shrink-0 flex items-center justify-center ml-3 mr-8" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-purple-300 select-none" style={{ fontSize: "4rem" }}>
                                 memory
                             </span>
                         </div>
