@@ -25,13 +25,23 @@ function get_sort_order_labels(sort_by: "device_id" | "uptime" | "firmware_versi
 }
 
 export default function Home() {
+
+    // Dummy values for summary metrics (replace with real logic later)
+    const avg_cpu_temp = 42.0;
+    const avg_wifi_rssi = -61;
+    const global_uptime_percent = 81.5;
+    const latest_firmware_version = "1.2.3";
+
     const [devices, set_devices] = useState<any[]>([]);
     const [loading, set_loading] = useState(true);
+    const [displayedUptime, setDisplayedUptime] = useState(0);
 
     const [search, set_search] = useState("");
     const [sort_by, set_sort_by] = useState<"device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi">("device_id");
     const [sort_order, set_sort_order] = useState<"ascending" | "descending">("ascending");
     const [online_first, set_online_first] = useState(true);
+
+
 
     useEffect(() => {
         const fetch_data = async () => {
@@ -44,11 +54,37 @@ export default function Home() {
             } else {
                 set_devices(data);
             }
-            set_loading(false);
+            // Artificial delay for loaders
+            setTimeout(() => set_loading(false), 4000);
         };
 
         fetch_data();
     }, []);
+
+    // Animate the progress circle value when loading finishes
+    useEffect(() => {
+        if (!loading) {
+            setDisplayedUptime(0);
+            let start = 0;
+            const end = global_uptime_percent;
+            const duration = 900; // ms
+            const steps = 30;
+            let currentStep = 0;
+            const stepValue = (end - start) / steps;
+            const interval = setInterval(() => {
+                currentStep++;
+                setDisplayedUptime(prev => {
+                    const next = prev + stepValue;
+                    if (currentStep >= steps) return end;
+                    return next;
+                });
+                if (currentStep >= steps) clearInterval(interval);
+            }, duration / steps);
+            return () => clearInterval(interval);
+        } else {
+            setDisplayedUptime(0);
+        }
+    }, [loading, global_uptime_percent]);
 
     function format_timestamp(timestamp: any) {
         if (timestamp == null) {
@@ -172,6 +208,7 @@ export default function Home() {
         status_counts[status as keyof typeof status_counts]++;
     });
 
+
     // Reference values
     const ESP_AVG_CURRENT = 0.0266; // Amps
     const ESP_VOLTAGE = 5; // Volts
@@ -181,75 +218,267 @@ export default function Home() {
     const daily_kwh = devices.length * ESP_AVG_CURRENT * ESP_VOLTAGE * HOURS_PER_DAY / 1000;
     const daily_kwh_display = daily_kwh.toLocaleString(undefined, { maximumFractionDigits: 3 });
 
+    // Find device with longest uptime (online)
+    let longest_uptime_device: any = null;
+    let longest_uptime = 0;
+    let online_devices = devices.filter((d) => get_device_status(d) === "Broadcasting");
+    let offline_devices = devices.filter((d) => get_device_status(d) === "Offline");
+    online_devices.forEach((device) => {
+        if (device.booted) {
+            const uptime = Date.now() - new Date(device.booted).getTime();
+            if (uptime > longest_uptime) {
+                longest_uptime = uptime;
+                longest_uptime_device = device;
+            }
+        }
+    });
+
+    // Find device that has been offline the longest (last_updated furthest in the past)
+    let longest_downtime_device: any = null;
+    let oldest_last_updated = Date.now();
+    offline_devices.forEach((device) => {
+        if (device.last_updated) {
+            const last_updated_time = new Date(device.last_updated).getTime();
+            if (last_updated_time < oldest_last_updated) {
+                oldest_last_updated = last_updated_time;
+                longest_downtime_device = device;
+            }
+        }
+    });
+
+    // Average CPU temperature (online only)
+    // Dummy values for summary metrics (replace with real logic later)
+
     return (
         <div className="flex flex-col min-h-screen bg-slate-900">
-            <div className="flex flex-col m-[80px] gap-10 overflow-x-auto justify-start items-start">
-                {/* Status count boxes at the very top */}
-                <div className="flex w-full gap-x-10">
+            <div className="flex flex-col m-[80px] gap-6 overflow-x-auto justify-start items-start">
+                {/* New top row: Up, Longest Uptime, Avg WiFi, Avg Temp (each 1/4) */}
+                <div className="flex w-full gap-x-6">
                     {/* Up devices */}
-                    <div className="flex items-center bg-slate-800 rounded-xl p-10 flex-1 min-w-0 border border-gray-700">
-                        {/* Status circle with glow effect */}
-                        <div className="relative flex-shrink-0 flex items-center justify-center mr-12 ml-8" style={{ width: 40, height: 40 }}>
-                            <span className={"absolute w-24 h-24 rounded-full bg-green-400/20"} aria-hidden="true" />
-                            <span className={"w-8 h-8 rounded-full bg-green-400"} aria-hidden="true" />
+                    <div
+                        className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
+                        style={{ flexBasis: '25%', minHeight: 90 }}
+                        data-tooltip-id="main-tooltip"
+                        data-tooltip-content="Number of devices currently connected to WiFi"
+                    >
+                        <div className="relative flex-shrink-0 flex items-center justify-center mr-8 ml-3" style={{ width: 28, height: 28 }}>
+                            <span className={"absolute w-15 h-15 rounded-full bg-green-400/20"} aria-hidden="true" />
+                            <span className={"w-5 h-5 rounded-full bg-green-400"} aria-hidden="true" />
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-12 w-24 bg-gray-700 rounded-xl animate-pulse mb-2" />
+                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : (
-                                <span className="text-6xl font-bold text-white leading-none">{status_counts.Broadcasting}</span>
+                                <span className="text-3xl font-bold text-white leading-none">{status_counts.Broadcasting}</span>
                             )}
-                            <span className="text-lg text-gray-300 mt-2">Up devices</span>
+                            <span className="text-base text-gray-300 mt-1">Up devices</span>
                         </div>
                     </div>
+                    {/* Longest uptime */}
+                    <div
+                        className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
+                        style={{ flexBasis: '25%', minHeight: 90 }}
+                        data-tooltip-id="main-tooltip"
+                        data-tooltip-content="Device with the longest continuous uptime"
+                    >
+                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-blue-400 select-none" style={{ fontSize: "3.5rem" }}>
+                                power
+                            </span>
+                        </div>
+                        <div className="flex flex-col flex-1 justify-center items-start">
+                            {loading ? (
+                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                            ) : longest_uptime_device ? (
+                                <span className="font-bold leading-none">
+                                    <span className="text-white text-xl align-middle">{longest_uptime_device.device_id}: </span>
+                                    <span className="text-blue-300 text-xl align-middle">{format_timestamp(longest_uptime_device.booted)}</span>
+                                </span>
+                            ) : (
+                                <span className="text-base text-gray-400">-</span>
+                            )}
+                            <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Longest uptime</span>
+                        </div>
+                    </div>
+                    {/* Avg WiFi RSSI */}
+                    <div
+                        className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
+                        style={{ flexBasis: '25%', minHeight: 90 }}
+                        data-tooltip-id="main-tooltip"
+                        data-tooltip-content="All-time average WiFi RSSI among all ESP32 devices"
+                    >
+                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-blue-300 select-none" style={{ fontSize: "3rem" }}>
+                                wifi
+                            </span>
+                        </div>
+                        <div className="flex flex-col flex-1 justify-center items-start">
+                            {loading ? (
+                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                            ) : (
+                                <span className="text-xl font-bold text-white leading-none">{avg_wifi_rssi} dBm</span>
+                            )}
+                            <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Average WiFi RSSI</span>
+                        </div>
+                    </div>
+                    {/* Avg CPU Temp */}
+                    <div
+                        className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
+                        style={{ flexBasis: '25%', minHeight: 90 }}
+                        data-tooltip-id="main-tooltip"
+                        data-tooltip-content="All-time average CPU temperature among all ESP32 devices"
+                    >
+                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-orange-300 select-none" style={{ fontSize: "3.5rem" }}>
+                                device_thermostat
+                            </span>
+                        </div>
+                        <div className="flex flex-col flex-1 justify-center items-start">
+                            {loading ? (
+                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                            ) : (
+                                <span className="text-xl font-bold text-white leading-none">{avg_cpu_temp.toFixed(1)}°C</span>
+                            )}
+                            <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Average CPU temperature</span>
+                        </div>
+                    </div>
+                </div>
+                {/* Second row: Down, Longest Downtime, Power, Latest Firmware (each 1/4) */}
+                <div className="flex w-full gap-x-6">
                     {/* Down devices */}
-                    <div className="flex items-center bg-slate-800 rounded-xl p-10 flex-1 min-w-0 border border-gray-700">
-                        {/* Status circle with glow effect */}
-                        <div className="relative flex-shrink-0 flex items-center justify-center mr-12 ml-8" style={{ width: 40, height: 40 }}>
-                            <span className={"absolute w-24 h-24 rounded-full bg-red-400/20"} aria-hidden="true" />
-                            <span className={"w-8 h-8 rounded-full bg-red-400"} aria-hidden="true" />
+                    <div
+                        className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
+                        style={{ flexBasis: '25%', minHeight: 90 }}
+                        data-tooltip-id="main-tooltip"
+                        data-tooltip-content="Number of devices currently not powered nor connected to WiFi"
+                    >
+                        <div className="relative flex-shrink-0 flex items-center justify-center mr-8 ml-3" style={{ width: 28, height: 28 }}>
+                            <span className={"absolute w-15 h-15 rounded-full bg-red-400/20"} aria-hidden="true" />
+                            <span className={"w-5 h-5 rounded-full bg-red-400"} aria-hidden="true" />
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-12 w-24 bg-gray-700 rounded-xl animate-pulse mb-2" />
+                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : (
-                                <span className="text-6xl font-bold text-white leading-none">{status_counts.Offline}</span>
+                                <span className="text-3xl font-bold text-white leading-none">{status_counts.Offline}</span>
                             )}
-                            <span className="text-lg text-gray-300 mt-2">Down devices</span>
+                            <span className="text-base text-gray-300 mt-1">Down devices</span>
                         </div>
                     </div>
-                    {/* Energy usage */}
-                    <div className="flex items-center bg-slate-800 rounded-xl p-10 flex-1 min-w-0 border border-gray-700">
-                        <div className="flex-shrink-0 flex items-center justify-center mr-10 ml-8" style={{ width: 40, height: 40 }}>
-                            <span
-                                className="material-symbols-rounded text-yellow-400 select-none"
-                                style={{ fontSize: "7rem", width: "7rem", height: "7rem", lineHeight: "7rem", display: "flex", alignItems: "center", justifyContent: "center" }}
-                            >
+                    {/* Longest downtime */}
+                    <div
+                        className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
+                        style={{ flexBasis: '25%', minHeight: 90 }}
+                        data-tooltip-id="main-tooltip"
+                        data-tooltip-content="Device with the longest downtime (since last boot)"
+                    >
+                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-red-400 select-none" style={{ fontSize: "3.5rem" }}>
+                                power_off
+                            </span>
+                        </div>
+                        <div className="flex flex-col flex-1 justify-center items-start">
+                            {loading ? (
+                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                            ) : longest_downtime_device ? (
+                                <span className="font-bold leading-none">
+                                    <span className="text-white text-xl align-middle">{longest_downtime_device.device_id}: </span>
+                                    <span className="text-red-300 text-xl align-middle">{format_timestamp(longest_downtime_device.last_updated)}</span>
+                                </span>
+                            ) : (
+                                <span className="text-base text-gray-400">-</span>
+                            )}
+                            <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Longest downtime</span>
+                        </div>
+                    </div>
+                    {/* Power consumption (1/4 width) */}
+                    <div
+                        className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
+                        style={{ flexBasis: '25%', minHeight: 90 }}
+                        data-tooltip-id="main-tooltip"
+                        data-tooltip-content="Estimated daily power consumption of all ESP32 devices"
+                    >
+                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-yellow-400 select-none" style={{ fontSize: "3.5rem" }}>
                                 energy_savings_leaf
                             </span>
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
-                            <span
-                                data-tooltip-id="main-tooltip"
-                                data-tooltip-content="Estimated daily power consumption of all ESP32 devices"
-                                className="flex flex-col items-start"
-                            >
-                                {loading ? (
-                                    <span className="block h-12 w-24 bg-gray-700 rounded-xl animate-pulse mb-2" />
-                                ) : (
-                                    <span className="text-6xl font-bold text-white leading-none">
-                                        {daily_kwh_display}
-                                    </span>
-                                )}
-                                <span className="text-lg text-gray-300 mt-2 whitespace-nowrap">kWh used daily</span>
+                            {loading ? (
+                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                            ) : (
+                                <span className="text-xl font-bold text-white leading-none">{daily_kwh_display} kWh</span>
+                            )}
+                            <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Daily power consumption</span>
+                        </div>
+                    </div>
+                    {/* Latest firmware version (1/4 width) */}
+                    <div
+                        className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
+                        style={{ flexBasis: '25%', minHeight: 90 }}
+                        data-tooltip-id="main-tooltip"
+                        data-tooltip-content="Latest firmware version released"
+                    >
+                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
+                            <span className="material-symbols-rounded text-purple-300 select-none" style={{ fontSize: "3.5rem" }}>
+                                memory
                             </span>
+                        </div>
+                        <div className="flex flex-col flex-1 justify-center items-start">
+                            {loading ? (
+                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                            ) : (
+                                <span className="text-xl font-bold text-white leading-none">{latest_firmware_version}</span>
+                            )}
+                            <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Latest version</span>
                         </div>
                     </div>
                 </div>
-                {/* Big panel below the boxes */}
-                <div className="w-full bg-slate-800 rounded-xl min-h-[280px] mb-20 flex items-center justify-center text-2xl text-gray-400 border border-gray-700">
-                    {/* Empty panel for future content */}
+                {/* Fourth row: global uptime (bigger), big panel */}
+                <div className="flex w-full gap-x-6 mb-16">
+                    {/* Global average uptime progress circle (square, bigger, tooltip) */}
+                    <div className="flex flex-col items-center justify-center bg-slate-800 rounded-xl min-w-0 border border-gray-700" style={{ flexBasis: '0 0 320px', width: 320, height: 320, aspectRatio: '1/1', padding: '0' }}>
+                        <span
+                            data-tooltip-id="main-tooltip"
+                            data-tooltip-content="All-time average uptime among all ESP32 devices"
+                            className="w-full h-full flex flex-col items-center justify-center"
+                        >
+                            <div className="relative flex items-center justify-center" style={{ width: 220, height: 220 }}>
+                                {/* SVG progress circle */}
+                                <svg width="220" height="220" viewBox="0 0 220 220">
+                                    <circle cx="110" cy="110" r="100" stroke="#334155" strokeWidth="18" fill="none" />
+                                    <circle
+                                        cx="110" cy="110" r="100"
+                                        stroke={global_uptime_percent >= 80 ? '#22c55e' : global_uptime_percent >= 50 ? '#facc15' : '#ef4444'}
+                                        strokeWidth="18"
+                                        fill="none"
+                                        strokeDasharray={2 * Math.PI * 100}
+                                        strokeDashoffset={2 * Math.PI * 100 * (1 - (loading ? 0 : displayedUptime) / 100)}
+                                        strokeLinecap="round"
+                                        style={{ transition: 'stroke-dashoffset 0.6s, stroke 0.6s' }}
+                                    />
+                                    <text x="50%" y="50%" textAnchor="middle" dy=".3em" fontSize="2.7rem" fill="#fff" fontWeight="bold">
+                                        {loading ? '' : displayedUptime.toFixed(1) + '%'}
+                                    </text>
+                                </svg>
+                                {loading && (
+                                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 block h-10 w-30 bg-gray-700 rounded-lg animate-pulse" style={{ zIndex: 2 }} />
+                                )}
+                            </div>
+                            <span className="text-lg text-gray-300 mt-6">Average uptime</span>
+                        </span>
+                    </div>
+                    {/* Big panel (2/3) */}
+                    <div
+                        className="flex flex-col bg-slate-800 rounded-xl min-h-[320px] mb-0 flex-1 border border-gray-700 justify-center items-center"
+                        style={{ flexBasis: 'auto' }}
+                        data-tooltip-id="main-tooltip"
+                        data-tooltip-content="Uptime history (COMING SOON)"
+                    >
+                        {/* Empty panel for future content */}
+                    </div>
                 </div>
+                
                 {/* Devices title and controls */}
                 <div className="w-full flex justify-between items-center gap-4">
                     <h1 className="text-5xl font-bold text-white h-11 flex items-center">
@@ -407,7 +636,7 @@ export default function Home() {
                                         <div
                                             className="flex items-center gap-3 w-[100px]"
                                             data-tooltip-id="main-tooltip"
-                                            data-tooltip-content="WiFi signal strength"
+                                            data-tooltip-content="WiFi signal strength (RSSI)"
                                         >
                                             {/* Only show faded wifi icon if not offline */}
                                             {!is_device_offline && (
