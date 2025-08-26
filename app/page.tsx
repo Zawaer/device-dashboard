@@ -55,7 +55,7 @@ export default function Home() {
                 set_devices(data);
             }
             // Artificial delay for loaders
-            setTimeout(() => set_loading(false), 4000);
+            setTimeout(() => set_loading(false), 2000);
         };
 
         fetch_data();
@@ -63,27 +63,38 @@ export default function Home() {
 
     // Animate the progress circle value when loading finishes
     useEffect(() => {
+        let animationFrame: number;
+        let startTimestamp: number | null = null;
+        const duration = 900; // ms
+        const end = global_uptime_percent;
+
+        // Ease-out cubic function
+        function easeOutCubic(t: number) {
+            return 1 - Math.pow(1 - t, 3);
+        }
+
+        function animate(timestamp: number) {
+            if (startTimestamp === null) startTimestamp = timestamp;
+            const elapsed = timestamp - startTimestamp;
+            const linearProgress = Math.min(elapsed / duration, 1);
+            const easedProgress = easeOutCubic(linearProgress);
+            setDisplayedUptime(easedProgress * end);
+            if (linearProgress < 1) {
+                animationFrame = requestAnimationFrame(animate);
+            } else {
+                setDisplayedUptime(end);
+            }
+        }
+
         if (!loading) {
             setDisplayedUptime(0);
-            let start = 0;
-            const end = global_uptime_percent;
-            const duration = 900; // ms
-            const steps = 30;
-            let currentStep = 0;
-            const stepValue = (end - start) / steps;
-            const interval = setInterval(() => {
-                currentStep++;
-                setDisplayedUptime(prev => {
-                    const next = prev + stepValue;
-                    if (currentStep >= steps) return end;
-                    return next;
-                });
-                if (currentStep >= steps) clearInterval(interval);
-            }, duration / steps);
-            return () => clearInterval(interval);
+            animationFrame = requestAnimationFrame(animate);
         } else {
             setDisplayedUptime(0);
         }
+        return () => {
+            if (animationFrame) cancelAnimationFrame(animationFrame);
+        };
     }, [loading, global_uptime_percent]);
 
     function format_timestamp(timestamp: any) {
@@ -267,7 +278,7 @@ export default function Home() {
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : (
                                 <span className="text-3xl font-bold text-white leading-none">{status_counts.Broadcasting}</span>
                             )}
@@ -288,7 +299,7 @@ export default function Home() {
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-28 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : longest_uptime_device ? (
                                 <span className="font-bold leading-none">
                                     <span className="text-white text-xl align-middle">{longest_uptime_device.device_id}: </span>
@@ -314,9 +325,9 @@ export default function Home() {
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : (
-                                <span className="text-xl font-bold text-white leading-none">{avg_wifi_rssi} dBm</span>
+                                <span className="text-xl font-bold text-white leading-none mb-1">{avg_wifi_rssi} dBm</span>
                             )}
                             <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Average WiFi RSSI</span>
                         </div>
@@ -335,9 +346,9 @@ export default function Home() {
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : (
-                                <span className="text-xl font-bold text-white leading-none">{avg_cpu_temp.toFixed(1)}°C</span>
+                                <span className="text-xl font-bold text-white leading-none mb-1">{avg_cpu_temp.toFixed(1)}°C</span>
                             )}
                             <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Average CPU temperature</span>
                         </div>
@@ -358,7 +369,7 @@ export default function Home() {
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : (
                                 <span className="text-3xl font-bold text-white leading-none">{status_counts.Offline}</span>
                             )}
@@ -379,7 +390,7 @@ export default function Home() {
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-28 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : longest_downtime_device ? (
                                 <span className="font-bold leading-none">
                                     <span className="text-white text-xl align-middle">{longest_downtime_device.device_id}: </span>
@@ -405,9 +416,9 @@ export default function Home() {
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : (
-                                <span className="text-xl font-bold text-white leading-none">{daily_kwh_display} kWh</span>
+                                <span className="text-xl font-bold text-white leading-none mb-1">{daily_kwh_display} kWh</span>
                             )}
                             <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Daily power consumption</span>
                         </div>
@@ -426,9 +437,9 @@ export default function Home() {
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
                             {loading ? (
-                                <span className="block h-6 w-20 bg-gray-700 rounded-lg animate-pulse mb-1" />
+                                <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : (
-                                <span className="text-xl font-bold text-white leading-none">{latest_firmware_version}</span>
+                                <span className="text-xl font-bold text-white leading-none mb-1">{latest_firmware_version}</span>
                             )}
                             <span className="text-base text-gray-300 mt-1 whitespace-nowrap">Latest version</span>
                         </div>
@@ -446,7 +457,13 @@ export default function Home() {
                             <div className="relative flex items-center justify-center" style={{ width: 220, height: 220 }}>
                                 {/* SVG progress circle */}
                                 <svg width="220" height="220" viewBox="0 0 220 220">
-                                    <circle cx="110" cy="110" r="100" stroke="#334155" strokeWidth="18" fill="none" />
+                                    <circle
+                                        cx="110" cy="110" r="100"
+                                        stroke="#334155"
+                                        strokeWidth="18"
+                                        fill="none"
+                                        className={loading ? 'animate-pulse' : ''}
+                                    />
                                     <circle
                                         cx="110" cy="110" r="100"
                                         stroke={global_uptime_percent >= 80 ? '#22c55e' : global_uptime_percent >= 50 ? '#facc15' : '#ef4444'}
@@ -455,7 +472,7 @@ export default function Home() {
                                         strokeDasharray={2 * Math.PI * 100}
                                         strokeDashoffset={2 * Math.PI * 100 * (1 - (loading ? 0 : displayedUptime) / 100)}
                                         strokeLinecap="round"
-                                        style={{ transition: 'stroke-dashoffset 0.6s, stroke 0.6s' }}
+                                        // No transition: JS animation handles smoothness
                                     />
                                     <text x="50%" y="50%" textAnchor="middle" dy=".3em" fontSize="2.7rem" fill="#fff" fontWeight="bold">
                                         {loading ? '' : displayedUptime.toFixed(1) + '%'}
