@@ -54,8 +54,9 @@ export default function Home() {
             } else {
                 set_devices(data);
             }
+            set_loading(false);
             // Artificial delay for loaders
-            setTimeout(() => set_loading(false), 2000);
+            // setTimeout(() => set_loading(false), 2000);
         };
 
         fetch_data();
@@ -339,9 +340,9 @@ export default function Home() {
                         data-tooltip-id="main-tooltip"
                         data-tooltip-content="All-time average CPU temperature among all ESP32 devices"
                     >
-                        <div className="flex-shrink-0 flex items-center justify-center mr-5 ml-3" style={{ width: 28, height: 28 }}>
+                        <div className="flex-shrink-0 flex items-center justify-center ml-3 mr-8" style={{ width: 28, height: 28 }}>
                             <span className="material-symbols-rounded text-orange-300 select-none" style={{ fontSize: "3.5rem" }}>
-                                device_thermostat
+                                thermometer
                             </span>
                         </div>
                         <div className="flex flex-col flex-1 justify-center items-start">
@@ -622,7 +623,7 @@ export default function Home() {
                                         />
                                     </div>
                                     {/* Device info */}
-                                    <div className="flex flex-col flex-grow min-w-0 justify-center">
+                                    <div className="flex flex-col flex-grow min-w-0 w-[120px] justify-center">
                                         <span
                                             className="text-white font-normal truncate leading-tight"
                                             style={{ fontSize: "22px" }}
@@ -648,7 +649,7 @@ export default function Home() {
                                         </span>
                                     </div>
                                     {/* Metrics grid*/}
-                                    <div className="grid grid-cols-6 gap-8 ml-auto min-w-[680px] items-center">
+                                    <div className="grid grid-cols-5 gap-16 min-w-[580px] items-center flex-grow">
                                         {/* RSSI */}
                                         <div
                                             className="flex items-center gap-3 w-[100px]"
@@ -749,20 +750,20 @@ export default function Home() {
                                                 {device.firmware_version ?? "-"}
                                             </span>
                                         </div>
-                                        {/* More button */}
-                                        <div className="flex items-center justify-center h-full w-10">
-                                            <button
-                                                type="button"
-                                                className="rounded-full hover:bg-slate-700 w-10 h-10 flex items-center justify-center transition cursor-pointer"
-                                                onClick={() => {/* set some modal state here, e.g. set_selected_device(device) */}}
-                                                data-tooltip-id="main-tooltip"
-                                                data-tooltip-content="Show more details (COMING SOON)"
-                                            >
-                                                <span className="material-symbols-rounded text-gray-400 text-2xl select-none">
-                                                    more_horiz
-                                                </span>
-                                            </button>
-                                        </div>
+                                    </div>
+                                    {/* More button at the far right */}
+                                    <div className="flex items-center justify-center h-full w-10 ml-4">
+                                        <button
+                                            type="button"
+                                            className="rounded-full hover:bg-slate-700 w-10 h-10 flex items-center justify-center transition cursor-pointer"
+                                            onClick={() => {/* set some modal state here, e.g. set_selected_device(device) */}}
+                                            data-tooltip-id="main-tooltip"
+                                            data-tooltip-content="Show more details (COMING SOON)"
+                                        >
+                                            <span className="material-symbols-rounded text-gray-400 text-2xl select-none">
+                                                more_horiz
+                                            </span>
+                                        </button>
                                     </div>
                                 </div>
                             );
