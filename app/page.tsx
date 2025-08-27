@@ -3,11 +3,24 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Tooltip } from "react-tooltip";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip as ChartTooltip,
+    Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, ChartTooltip, Legend);
 
 // helper for dynamic sort order labels
 function get_sort_order_labels(sort_by: "device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi") {
@@ -35,18 +48,17 @@ export default function Home() {
     const [devices, set_devices] = useState<any[]>([]);
     const [loading, set_loading] = useState(true);
     const [displayedUptime, setDisplayedUptime] = useState(0);
+    const [uptimeHistory, setUptimeHistory] = useState<{ day: string; average_uptime: number }[]>([]);
 
     const [search, set_search] = useState("");
     const [sort_by, set_sort_by] = useState<"device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi">("device_id");
     const [sort_order, set_sort_order] = useState<"ascending" | "descending">("ascending");
     const [online_first, set_online_first] = useState(true);
 
-
-
     useEffect(() => {
         const fetch_data = async () => {
             const { data, error } = await supabase
-                .from("devices")
+                .from("devices_raw")
                 .select("*");
 
             if (error) {
@@ -55,8 +67,7 @@ export default function Home() {
                 set_devices(data);
             }
             set_loading(false);
-            // Artificial delay for loaders
-            // setTimeout(() => set_loading(false), 2000);
+            //setTimeout(() => set_loading(false), 2000); // Artificial delay for loaders
         };
 
         fetch_data();
@@ -66,7 +77,7 @@ export default function Home() {
     useEffect(() => {
         let animationFrame: number;
         let startTimestamp: number | null = null;
-        const duration = 900; // ms
+        const duration = 800;
         const end = global_uptime_percent;
 
         // Ease-out cubic function
@@ -97,6 +108,19 @@ export default function Home() {
             if (animationFrame) cancelAnimationFrame(animationFrame);
         };
     }, [loading, global_uptime_percent]);
+
+    useEffect(() => {
+        const fetchUptimeHistory = async () => {
+            const { data, error } = await supabase
+                .from('devices_aggregated')
+                .select('day,average_uptime')
+                .order('day', { ascending: true });
+            if (!error && data) {
+                setUptimeHistory(data);
+            }
+        };
+        fetchUptimeHistory();
+    }, []);
 
     function format_timestamp(timestamp: any) {
         if (timestamp == null) {
@@ -152,22 +176,24 @@ export default function Home() {
     function get_device_status(device: any): string {
         const last_updated_time = new Date(device.last_updated).getTime();
         const now = Date.now();
-        const max_allowed_delay = (parseInt(device.update_interval) + 60) * 1000;
+        // update_interval is int4 (number)
+        const max_allowed_delay = ((typeof device.update_interval === 'number' ? device.update_interval : parseInt(device.update_interval)) + 60) * 1000;
         return (now - last_updated_time > max_allowed_delay) ? "Offline" : "Broadcasting";
     }
 
     // filter by device ID
     const filtered_devices = devices.filter((device) =>
-        device.device_id?.toString().toLowerCase().includes(search.toLowerCase())
+        device.device_id !== undefined && device.device_id !== null && device.device_id.toString().toLowerCase().includes(search.toLowerCase())
     );
 
     // sorting logic
     function compareDevices(a: any, b: any) {
         let result = 0;
         if (sort_by === "device_id") {
-            const id_a = a.device_id ?? "";
-            const id_b = b.device_id ?? "";
-            result = id_a.localeCompare(id_b, undefined, { numeric: true });
+            // device_id is int2 (number), so compare as numbers
+            const id_a = typeof a.device_id === 'number' ? a.device_id : -1;
+            const id_b = typeof b.device_id === 'number' ? b.device_id : -1;
+            result = id_a - id_b;
         } else if (sort_by === "uptime") {
             // Sort by uptime or downtime, regardless of status
             const status_a = get_device_status(a);
@@ -177,23 +203,25 @@ export default function Home() {
                 val_a = a.booted ? Date.now() - new Date(a.booted).getTime() : 0;
             } else {
                 val_a = a.last_updated
-                    ? Date.now() - (new Date(a.last_updated).getTime() + parseInt(a.update_interval) * 1000)
+                    ? Date.now() - (new Date(a.last_updated).getTime() + ((typeof a.update_interval === 'number' ? a.update_interval : parseInt(a.update_interval)) * 1000))
                     : 0;
             }
             if (status_b !== "Offline") {
                 val_b = b.booted ? Date.now() - new Date(b.booted).getTime() : 0;
             } else {
                 val_b = b.last_updated
-                    ? Date.now() - (new Date(b.last_updated).getTime() + parseInt(b.update_interval) * 1000)
+                    ? Date.now() - (new Date(b.last_updated).getTime() + ((typeof b.update_interval === 'number' ? b.update_interval : parseInt(b.update_interval)) * 1000))
                     : 0;
             }
             result = val_a - val_b;
         } else if (sort_by === "firmware_version") {
             result = (a.firmware_version ?? "").localeCompare(b.firmware_version ?? "", undefined, { numeric: true });
         } else if (sort_by === "cpu_temperature") {
-            result = (a.cpu_temperature ?? 0) - (b.cpu_temperature ?? 0);
+            // cpu_temperature is int2 (number)
+            result = (typeof a.cpu_temperature === 'number' ? a.cpu_temperature : parseInt(a.cpu_temperature) || 0) - (typeof b.cpu_temperature === 'number' ? b.cpu_temperature : parseInt(b.cpu_temperature) || 0);
         } else if (sort_by === "wifi_rssi") {
-            result = (a.wifi_rssi ?? -999) - (b.wifi_rssi ?? -999);
+            // wifi_rssi is int2 (number)
+            result = (typeof a.wifi_rssi === 'number' ? a.wifi_rssi : parseInt(a.wifi_rssi) || -999) - (typeof b.wifi_rssi === 'number' ? b.wifi_rssi : parseInt(b.wifi_rssi) || -999);
         }
         return sort_order === "ascending" ? result : -result;
     }
@@ -228,7 +256,7 @@ export default function Home() {
 
     // Calculate daily kWh
     const daily_kwh = devices.length * ESP_AVG_CURRENT * ESP_VOLTAGE * HOURS_PER_DAY / 1000;
-    const daily_kwh_display = daily_kwh.toLocaleString(undefined, { maximumFractionDigits: 3 });
+    const daily_kwh_display = daily_kwh.toLocaleString("en-US", { maximumFractionDigits: 3 });
 
     // Find device with longest uptime (online)
     let longest_uptime_device: any = null;
@@ -303,7 +331,7 @@ export default function Home() {
                                 <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : longest_uptime_device ? (
                                 <span className="font-bold leading-none">
-                                    <span className="text-white text-xl align-middle">{longest_uptime_device.device_id}: </span>
+                                    <span className="text-white text-xl align-middle">{longest_uptime_device.device_id !== undefined && longest_uptime_device.device_id !== null ? longest_uptime_device.device_id.toString() : "-"}: </span>
                                     <span className="text-blue-300 text-xl align-middle">{format_timestamp(longest_uptime_device.booted)}</span>
                                 </span>
                             ) : (
@@ -362,7 +390,7 @@ export default function Home() {
                         className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
                         style={{ flexBasis: '25%', minHeight: 90 }}
                         data-tooltip-id="main-tooltip"
-                        data-tooltip-content="Number of devices currently not powered nor connected to WiFi"
+                        data-tooltip-content="Number of devices currently not connected to WiFi and/or not powered"
                     >
                         <div className="relative flex-shrink-0 flex items-center justify-center ml-4 mr-9" style={{ width: 28, height: 28 }}>
                             <span className={"absolute w-15 h-15 rounded-full bg-red-400/20"} aria-hidden="true" />
@@ -394,7 +422,7 @@ export default function Home() {
                                 <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : longest_downtime_device ? (
                                 <span className="font-bold leading-none">
-                                    <span className="text-white text-xl align-middle">{longest_downtime_device.device_id}: </span>
+                                    <span className="text-white text-xl align-middle">{longest_downtime_device.device_id !== undefined && longest_downtime_device.device_id !== null ? longest_downtime_device.device_id.toString() : "-"}: </span>
                                     <span className="text-red-300 text-xl align-middle">{format_timestamp(longest_downtime_device.last_updated)}</span>
                                 </span>
                             ) : (
@@ -490,16 +518,54 @@ export default function Home() {
                     <div
                         className="flex flex-col bg-slate-800 rounded-xl min-h-[320px] mb-0 flex-1 border border-gray-700 justify-center items-center"
                         style={{ flexBasis: 'auto' }}
-                        data-tooltip-id="main-tooltip"
-                        data-tooltip-content="Uptime history (COMING SOON)"
                     >
-                        {/* Empty panel for future content */}
+                        {uptimeHistory.length > 0 ? (
+                            <div style={{ width: '100%', height: '100%', minHeight: 0, minWidth: 0, position: 'relative' }} className="flex-1 flex items-center justify-center">
+                                <Line
+                                    data={{
+                                        labels: uptimeHistory.map((row) => row.day),
+                                        datasets: [
+                                            {
+                                                label: 'Average uptime (%)',
+                                                data: uptimeHistory.map((row) => row.average_uptime),
+                                                borderColor: '#22c55e',
+                                                backgroundColor: 'rgba(34,197,94,0.2)',
+                                                tension: 0.3,
+                                                pointRadius: 2,
+                                            },
+                                        ],
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        animation: {
+                                            duration: 500,
+                                        },
+                                        plugins: {
+                                            legend: { display: false },
+                                            title: { display: false },
+                                        },
+                                        layout: {
+                                            padding: 0,
+                                        },
+                                        resizeDelay: 0,
+                                    }}
+                                    style={{ position: 'absolute', inset: 0 }}
+                                />
+                            </div>
+                        ) : loading ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                                <div className="w-5/6 h-2/3 bg-gray-700/60 rounded-xl animate-pulse" style={{ minHeight: 80, minWidth: 120 }} />
+                            </div>
+                        ) : (
+                            <span className="text-gray-400 text-lg">No uptime history data.</span>
+                        )}
                     </div>
                 </div>
                 
                 {/* Devices title and controls */}
                 <div className="w-full flex justify-between items-center gap-4">
-                    <h1 className="text-5xl font-bold text-white h-11 flex items-center">
+                    <h1 className="text-4xl font-bold text-white flex items-center">
                         Device list
                     </h1>
                     <div className="flex items-center gap-4">
@@ -596,15 +662,15 @@ export default function Home() {
                                 ? format_timestamp(device.booted)
                                 : format_timestamp(
                                     device.last_updated
-                                        ? new Date(new Date(device.last_updated).getTime() + (parseInt(device.update_interval) * 1000))
+                                        ? new Date(new Date(device.last_updated).getTime() + ((typeof device.update_interval === 'number' ? device.update_interval : parseInt(device.update_interval)) * 1000))
                                         : null
                                 );
-                            const interval_text = device.update_interval == null ? "-" : format_interval(device.update_interval);
-                            const temp_text = is_device_offline ? "-" : check_null(device.cpu_temperature, "°C");
+                            const interval_text = device.update_interval == null ? "-" : format_interval(typeof device.update_interval === 'number' ? device.update_interval : parseInt(device.update_interval));
+                            const temp_text = is_device_offline ? "-" : (device.cpu_temperature !== undefined && device.cpu_temperature !== null ? device.cpu_temperature.toString() + "°C" : "-");
 
                             return (
                                 <div
-                                    key={device.device_id}
+                                    key={device.device_id?.toString?.() ?? device.device_id}
                                     className={
                                         "flex items-center w-full bg-slate-800 px-6 py-4 shadow-sm" +
                                         (idx !== sorted_devices.length - 1 ? " border-b border-gray-700" : "")
@@ -628,7 +694,7 @@ export default function Home() {
                                             className="text-white font-normal truncate leading-tight"
                                             style={{ fontSize: "22px" }}
                                         >
-                                            {device.device_id ?? "-"}
+                                            {device.device_id !== undefined && device.device_id !== null ? device.device_id.toString() : "-"}
                                         </span>
                                         <span className="flex items-center gap-2 mt-0.5 mb-0.5" style={{ fontSize: "16px" }}>
                                             <span className={`${status_color} font-medium`}>{status_text}</span>
@@ -673,7 +739,7 @@ export default function Home() {
                                                             : "wifi_1_bar"}
                                             </span>
                                             <span className="text-gray-400 text-base">
-                                                {is_device_offline ? "-" : check_null(device.wifi_rssi, " dBm")}
+                                                {is_device_offline ? "-" : (device.wifi_rssi !== undefined && device.wifi_rssi !== null ? device.wifi_rssi.toString() + " dBm" : "-")}
                                             </span>
                                         </div>
                                         {/* CPU temperature */}
@@ -688,7 +754,7 @@ export default function Home() {
                                                     (
                                                         temp_text === "-" 
                                                             ? "text-gray-400"
-                                                            : Number(device.cpu_temperature) >= 55 || Number(device.cpu_temperature) <= 15
+                                                            : (typeof device.cpu_temperature === 'number' ? device.cpu_temperature : parseInt(device.cpu_temperature)) >= 55 || (typeof device.cpu_temperature === 'number' ? device.cpu_temperature : parseInt(device.cpu_temperature)) <= 15
                                                                 ? "text-red-400"
                                                                 : "text-gray-400"
                                                     )
@@ -702,7 +768,7 @@ export default function Home() {
                                                     (
                                                         temp_text === "-" 
                                                             ? "text-gray-400"
-                                                            : Number(device.cpu_temperature) >= 55 || Number(device.cpu_temperature) <= 10
+                                                            : (typeof device.cpu_temperature === 'number' ? device.cpu_temperature : parseInt(device.cpu_temperature)) >= 55 || (typeof device.cpu_temperature === 'number' ? device.cpu_temperature : parseInt(device.cpu_temperature)) <= 10
                                                                 ? "text-red-400"
                                                                 : "text-gray-400"
                                                     )
