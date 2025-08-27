@@ -23,6 +23,29 @@ const supabase = createClient(
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, ChartTooltip, Legend, Filler);
 
+// Helper to interpolate color between red, yellow, green
+function getUptimeColor(percent: number) {
+    // 0-50: red (#ef4444) to yellow (#facc15), 50-100: yellow to green (#22c55e)
+    const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
+    let r, g, b;
+    if (percent <= 50) {
+        // red to yellow
+        const t = clamp(percent / 50, 0, 1);
+        // #ef4444 (239,68,68) to #facc15 (250,204,21)
+        r = 239 + (250 - 239) * t;
+        g = 68 + (204 - 68) * t;
+        b = 68 + (21 - 68) * t;
+    } else {
+        // yellow to green
+        const t = clamp((percent - 50) / 50, 0, 1);
+        // #facc15 (250,204,21) to #22c55e (34,197,94)
+        r = 250 + (34 - 250) * t;
+        g = 204 + (197 - 204) * t;
+        b = 21 + (94 - 21) * t;
+    }
+    return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
+}
+
 // helper for dynamic sort order labels
 function get_sort_order_labels(sort_by: "device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi") {
     switch (sort_by) {
@@ -47,18 +70,26 @@ const TIME_RANGES = [
 
 export default function Home() {
 
+    // State for uptime history and selected range
+    const [uptime_history, setUptimeHistory] = useState<{ day: string; average_uptime: number }[]>([]);
+    const [selected_range, setSelectedRange] = useState<string>("7d");
+
     // Dummy values for summary metrics (replace with real logic later)
     const avg_cpu_temp = 42.0;
     const avg_wifi_rssi = -61;
-    const global_uptime_percent = 81.5;
     const latest_firmware_version = "1.2.3";
+
+    // Calculate average uptime for selected range (from uptime_history)
+    const global_uptime_percent =
+        uptime_history.length > 0
+            ? uptime_history.reduce((sum, row) => sum + (typeof row.average_uptime === 'number' ? row.average_uptime : 0), 0) / uptime_history.length
+            : 0;
 
     const [devices, set_devices] = useState<any[]>([]);
     const [loading, set_loading] = useState(true);
     const [displayedUptime, setDisplayedUptime] = useState(0);
 
-    const [uptimeHistory, setUptimeHistory] = useState<{ day: string; average_uptime: number }[]>([]);
-    const [selectedRange, setSelectedRange] = useState<string>("7d");
+
 
     const [search, set_search] = useState("");
     const [sort_by, set_sort_by] = useState<"device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi">("device_id");
@@ -87,20 +118,20 @@ export default function Home() {
     useEffect(() => {
         let animationFrame: number;
         let startTimestamp: number | null = null;
-        const duration = 800;
+        const duration = 500;
+        const start = displayedUptime;
         const end = global_uptime_percent;
 
-        // Ease-out cubic function
-        function easeOutCubic(t: number) {
-            return 1 - Math.pow(1 - t, 3);
+        function easeOutQuart(t: number) {
+            return 1 - Math.pow(1 - t, 4);
         }
 
         function animate(timestamp: number) {
             if (startTimestamp === null) startTimestamp = timestamp;
             const elapsed = timestamp - startTimestamp;
             const linearProgress = Math.min(elapsed / duration, 1);
-            const easedProgress = easeOutCubic(linearProgress);
-            setDisplayedUptime(easedProgress * end);
+            const easedProgress = easeOutQuart(linearProgress);
+            setDisplayedUptime(start + (end - start) * easedProgress);
             if (linearProgress < 1) {
                 animationFrame = requestAnimationFrame(animate);
             } else {
@@ -109,10 +140,7 @@ export default function Home() {
         }
 
         if (!loading) {
-            setDisplayedUptime(0);
             animationFrame = requestAnimationFrame(animate);
-        } else {
-            setDisplayedUptime(0);
         }
         return () => {
             if (animationFrame) cancelAnimationFrame(animationFrame);
@@ -123,25 +151,25 @@ export default function Home() {
     useEffect(() => {
         // Example: fetch with time range filter (replace with real backend logic)
         const fetchUptimeHistory = async () => {
-            // You should update this query to use the selectedRange in your backend
+            // You should update this query to use the selected_range in your backend
             const { data, error } = await supabase
                 .from('devices_aggregated')
                 .select('day,average_uptime')
                 .order('day', { ascending: true });
             if (!error && data) {
-                // Filter data by selectedRange (simulate for now)
+                // Filter data by selected_range (simulate for now)
                 let filtered = data;
                 const now = new Date();
-                if (selectedRange === "24h") {
+                if (selected_range === "24h") {
                     const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
                     filtered = data.filter((row: any) => new Date(row.day) >= cutoff);
-                } else if (selectedRange === "7d") {
+                } else if (selected_range === "7d") {
                     const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
                     filtered = data.filter((row: any) => new Date(row.day) >= cutoff);
-                } else if (selectedRange === "30d") {
+                } else if (selected_range === "30d") {
                     const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
                     filtered = data.filter((row: any) => new Date(row.day) >= cutoff);
-                } else if (selectedRange === "1y") {
+                } else if (selected_range === "1y") {
                     const cutoff = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
                     filtered = data.filter((row: any) => new Date(row.day) >= cutoff);
                 }
@@ -149,7 +177,7 @@ export default function Home() {
             }
         };
         fetchUptimeHistory();
-    }, [selectedRange]);
+    }, [selected_range]);
 
     function format_timestamp(timestamp: any) {
         if (timestamp == null) {
@@ -524,13 +552,16 @@ export default function Home() {
                                     />
                                     <circle
                                         cx="110" cy="110" r="100"
-                                        stroke={global_uptime_percent >= 80 ? '#22c55e' : global_uptime_percent >= 50 ? '#facc15' : '#ef4444'}
+                                        stroke={
+                                            loading
+                                                ? getUptimeColor(0)
+                                                : getUptimeColor(displayedUptime)
+                                        }
                                         strokeWidth="18"
                                         fill="none"
                                         strokeDasharray={2 * Math.PI * 100}
                                         strokeDashoffset={2 * Math.PI * 100 * (1 - (loading ? 0 : displayedUptime) / 100)}
                                         strokeLinecap="round"
-                                        // No transition: JS animation handles smoothness
                                     />
                                     <text x="50%" y="50%" textAnchor="middle" dy=".3em" fontSize="2.7rem" fill="#fff" fontWeight="bold">
                                         {loading ? '' : displayedUptime.toFixed(1) + '%'}
@@ -540,7 +571,13 @@ export default function Home() {
                                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 block h-10 w-30 bg-gray-700 rounded-lg animate-pulse" style={{ zIndex: 2 }} />
                                 )}
                             </div>
-                            <span className="text-lg text-gray-300 mt-6">Average uptime</span>
+                            <span className="text-lg text-gray-300 mt-6">
+                                {selected_range === "7d" && "Average uptime (last 7 days)"}
+                                {selected_range === "30d" && "Average uptime (last 30 days)"}
+                                {selected_range === "1y" && "Average uptime (last 365 days)"}
+                                {/* fallback for unknown */}
+                                {selected_range !== "7d" && selected_range !== "30d" && selected_range !== "1y" && "Average uptime"}
+                            </span>
                         </span>
                     </div>
                     {/* Big panel (2/3) with padding, y-axis label, and time range dropdown */}
@@ -558,7 +595,7 @@ export default function Home() {
                                     </span>
                                     <select
                                         className="rounded-lg bg-slate-900 text-gray-200 border border-gray-700 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
-                                        value={selectedRange}
+                                        value={selected_range}
                                         onChange={e => setSelectedRange(e.target.value)}
                                         style={{ minWidth: 120, height: 44 }}
                                     >
@@ -567,14 +604,13 @@ export default function Home() {
                                         ))}
                                     </select>
                                 </span>
-        <span className="text-2xl font-extrabold text-gray-200 mr-6">Uptime</span>
-        <div className="flex-1" />
+                                <span className="text-2xl font-extrabold text-gray-200 mr-6">Uptime</span>
                             </div>
-                            {uptimeHistory.length > 0 ? (
+                            {uptime_history.length > 0 ? (
                                 <div style={{ width: '100%', height: '100%', minHeight: 220, minWidth: 0, position: 'relative', flex: 1 }} className="flex-1 flex items-center justify-center">
                                     <Line
                                         data={{
-                                            labels: uptimeHistory.map((row) => {
+                                            labels: uptime_history.map((row) => {
                                                 // Format date as Finnish style (e.g. 27.8. or 27.8.2025)
                                                 const d = new Date(row.day);
                                                 return d.getFullYear() !== new Date().getFullYear()
@@ -584,10 +620,11 @@ export default function Home() {
                                             datasets: [
                                                 {
                                                     label: 'Average uptime (%)',
-                                                    data: uptimeHistory.map((row) => row.average_uptime),
+                                                    data: uptime_history.map((row) => row.average_uptime),
                                                     borderColor: '#22c55e',
                                                     tension: 0.3,
                                                     pointRadius: 2,
+                                                    clip: false,
                                                     fill: true,
                                                     backgroundColor: (context) => {
                                                         const ctx = context.chart.ctx;
@@ -602,15 +639,23 @@ export default function Home() {
                                         options={{
                                             responsive: true,
                                             maintainAspectRatio: false,
+                                            interaction: {
+                                                intersect: false,
+                                                mode: 'index',
+                                            },
                                             animation: {
-                                                duration: 200,
+                                                duration: 100,
                                             },
                                             plugins: {
                                                 legend: { display: false },
                                                 title: { display: true },
-                                            },
-                                            layout: {
-                                                padding: 0,
+                                                tooltip: {
+                                                    callbacks: {
+                                                        label: function(context) {
+                                                            return "Average uptime: " + context.parsed.y + "%";
+                                                        }
+                                                    },
+                                                },
                                             },
                                             resizeDelay: 0,
                                             devicePixelRatio: 4,
@@ -618,11 +663,14 @@ export default function Home() {
                                                 y: {
                                                     min: 0,
                                                     max: 100,
+                                                    beginAtZero: true,
+                                                    grace: 0,
+                                                    offset: false,
                                                     ticks: {
                                                         stepSize: 20,
                                                         font: { size: 14 },
                                                         callback: function(value) {
-                                                            return value + "%"
+                                                            return value + "%";
                                                         },
                                                     },
                                                 },
