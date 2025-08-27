@@ -3,11 +3,24 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Tooltip } from "react-tooltip";
+import {
+    Chart as ChartJS,
+    CategoryScale,
+    LinearScale,
+    PointElement,
+    LineElement,
+    Title,
+    Tooltip as ChartTooltip,
+    Legend,
+} from 'chart.js';
+import { Line } from 'react-chartjs-2';
 
 const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, ChartTooltip, Legend);
 
 // helper for dynamic sort order labels
 function get_sort_order_labels(sort_by: "device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi") {
@@ -35,13 +48,12 @@ export default function Home() {
     const [devices, set_devices] = useState<any[]>([]);
     const [loading, set_loading] = useState(true);
     const [displayedUptime, setDisplayedUptime] = useState(0);
+    const [uptimeHistory, setUptimeHistory] = useState<{ day: string; average_uptime: number }[]>([]);
 
     const [search, set_search] = useState("");
     const [sort_by, set_sort_by] = useState<"device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi">("device_id");
     const [sort_order, set_sort_order] = useState<"ascending" | "descending">("ascending");
     const [online_first, set_online_first] = useState(true);
-
-
 
     useEffect(() => {
         const fetch_data = async () => {
@@ -55,7 +67,7 @@ export default function Home() {
                 set_devices(data);
             }
             set_loading(false);
-            // setTimeout(() => set_loading(false), 2000); // Artificial delay for loaders
+            //setTimeout(() => set_loading(false), 2000); // Artificial delay for loaders
         };
 
         fetch_data();
@@ -96,6 +108,19 @@ export default function Home() {
             if (animationFrame) cancelAnimationFrame(animationFrame);
         };
     }, [loading, global_uptime_percent]);
+
+    useEffect(() => {
+        const fetchUptimeHistory = async () => {
+            const { data, error } = await supabase
+                .from('devices_aggregated')
+                .select('day,average_uptime')
+                .order('day', { ascending: true });
+            if (!error && data) {
+                setUptimeHistory(data);
+            }
+        };
+        fetchUptimeHistory();
+    }, []);
 
     function format_timestamp(timestamp: any) {
         if (timestamp == null) {
@@ -365,7 +390,7 @@ export default function Home() {
                         className="flex-1 flex items-center bg-slate-800 rounded-lg p-5 min-w-0 border border-gray-700"
                         style={{ flexBasis: '25%', minHeight: 90 }}
                         data-tooltip-id="main-tooltip"
-                        data-tooltip-content="Number of devices currently not powered nor connected to WiFi"
+                        data-tooltip-content="Number of devices currently not connected to WiFi and/or not powered"
                     >
                         <div className="relative flex-shrink-0 flex items-center justify-center ml-4 mr-9" style={{ width: 28, height: 28 }}>
                             <span className={"absolute w-15 h-15 rounded-full bg-red-400/20"} aria-hidden="true" />
@@ -493,16 +518,54 @@ export default function Home() {
                     <div
                         className="flex flex-col bg-slate-800 rounded-xl min-h-[320px] mb-0 flex-1 border border-gray-700 justify-center items-center"
                         style={{ flexBasis: 'auto' }}
-                        data-tooltip-id="main-tooltip"
-                        data-tooltip-content="Uptime history (COMING SOON)"
                     >
-                        {/* Empty panel for future content */}
+                        {uptimeHistory.length > 0 ? (
+                            <div style={{ width: '100%', height: '100%', minHeight: 0, minWidth: 0, position: 'relative' }} className="flex-1 flex items-center justify-center">
+                                <Line
+                                    data={{
+                                        labels: uptimeHistory.map((row) => row.day),
+                                        datasets: [
+                                            {
+                                                label: 'Average uptime (%)',
+                                                data: uptimeHistory.map((row) => row.average_uptime),
+                                                borderColor: '#22c55e',
+                                                backgroundColor: 'rgba(34,197,94,0.2)',
+                                                tension: 0.3,
+                                                pointRadius: 2,
+                                            },
+                                        ],
+                                    }}
+                                    options={{
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        animation: {
+                                            duration: 500,
+                                        },
+                                        plugins: {
+                                            legend: { display: false },
+                                            title: { display: false },
+                                        },
+                                        layout: {
+                                            padding: 0,
+                                        },
+                                        resizeDelay: 0,
+                                    }}
+                                    style={{ position: 'absolute', inset: 0 }}
+                                />
+                            </div>
+                        ) : loading ? (
+                            <div className="w-full h-full flex items-center justify-center">
+                                <div className="w-5/6 h-2/3 bg-gray-700/60 rounded-xl animate-pulse" style={{ minHeight: 80, minWidth: 120 }} />
+                            </div>
+                        ) : (
+                            <span className="text-gray-400 text-lg">No uptime history data.</span>
+                        )}
                     </div>
                 </div>
                 
                 {/* Devices title and controls */}
                 <div className="w-full flex justify-between items-center gap-4">
-                    <h1 className="text-5xl font-bold text-white h-11 flex items-center">
+                    <h1 className="text-4xl font-bold text-white flex items-center">
                         Device list
                     </h1>
                     <div className="flex items-center gap-4">
