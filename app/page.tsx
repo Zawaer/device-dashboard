@@ -25,23 +25,23 @@ ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, C
 
 // Helper to interpolate color between red, yellow, green
 function getUptimeColor(percent: number) {
-    // 0-50: red (#ef4444) to yellow (#facc15), 50-100: yellow to green (#22c55e)
+    // 0-50: red (#f87171) to yellow (#facc15), 50-100: yellow to green (#4ade80)
     const clamp = (v: number, min: number, max: number) => Math.max(min, Math.min(max, v));
     let r, g, b;
     if (percent <= 50) {
         // red to yellow
         const t = clamp(percent / 50, 0, 1);
-        // #ef4444 (239,68,68) to #facc15 (250,204,21)
-        r = 239 + (250 - 239) * t;
-        g = 68 + (204 - 68) * t;
-        b = 68 + (21 - 68) * t;
+        // #f87171 (248, 113, 113) to #facc15 (250, 204, 21)
+        r = 248 + (250 - 239) * t;
+        g = 113 + (204 - 68) * t;
+        b = 113 + (21 - 68) * t;
     } else {
         // yellow to green
         const t = clamp((percent - 50) / 50, 0, 1);
-        // #facc15 (250,204,21) to #22c55e (34,197,94)
-        r = 250 + (34 - 250) * t;
-        g = 204 + (197 - 204) * t;
-        b = 21 + (94 - 21) * t;
+        // #facc15 (250, 204, 21) to #4ade80 (74, 222, 128)
+        r = 250 + (74 - 250) * t;
+        g = 204 + (222 - 204) * t;
+        b = 21 + (128 - 21) * t;
     }
     return `rgb(${Math.round(r)},${Math.round(g)},${Math.round(b)})`;
 }
@@ -379,7 +379,7 @@ export default function Home() {
                         data-tooltip-content="Device with the longest continuous uptime"
                     >
                         <div className="flex-shrink-0 flex items-center justify-center ml-3 mr-8" style={{ width: 28, height: 28 }}>
-                            <span className="material-symbols-rounded text-blue-400 select-none" style={{ fontSize: "4rem" }}>
+                            <span className="material-symbols-rounded text-green-400 select-none" style={{ fontSize: "4rem" }}>
                                 power
                             </span>
                         </div>
@@ -388,8 +388,8 @@ export default function Home() {
                                 <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : longest_uptime_device ? (
                                 <span className="font-bold leading-none">
-                                    <span className="text-white text-xl align-middle">{longest_uptime_device.device_id !== undefined && longest_uptime_device.device_id !== null ? longest_uptime_device.device_id.toString() : "-"}: </span>
-                                    <span className="text-blue-300 text-xl align-middle">{format_timestamp(longest_uptime_device.booted)}</span>
+                                    <span className="text-white text-xl align-middle">{longest_uptime_device.device_id !== undefined && longest_uptime_device.device_id !== null ? longest_uptime_device.device_id.toString() : "-"} · </span>
+                                    <span className="text-xl align-middle">{format_timestamp(longest_uptime_device.booted)}</span>
                                 </span>
                             ) : (
                                 <span className="text-base text-gray-400">-</span>
@@ -479,8 +479,8 @@ export default function Home() {
                                 <span className="block h-6 w-24 bg-gray-700 rounded-lg animate-pulse mb-1" />
                             ) : longest_downtime_device ? (
                                 <span className="font-bold leading-none">
-                                    <span className="text-white text-xl align-middle">{longest_downtime_device.device_id !== undefined && longest_downtime_device.device_id !== null ? longest_downtime_device.device_id.toString() : "-"}: </span>
-                                    <span className="text-red-300 text-xl align-middle">{format_timestamp(longest_downtime_device.last_updated)}</span>
+                                    <span className="text-white text-xl align-middle">{longest_downtime_device.device_id !== undefined && longest_downtime_device.device_id !== null ? longest_downtime_device.device_id.toString() : "-"} · </span>
+                                    <span className="text-xl align-middle">{format_timestamp(longest_downtime_device.last_updated)}</span>
                                 </span>
                             ) : (
                                 <span className="text-base text-gray-400">-</span>
@@ -571,12 +571,10 @@ export default function Home() {
                                     <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 block h-10 w-30 bg-gray-700 rounded-lg animate-pulse" style={{ zIndex: 2 }} />
                                 )}
                             </div>
-                            <span className="text-lg text-gray-300 mt-6">
-                                {selected_range === "7d" && "Average uptime (last 7 days)"}
-                                {selected_range === "30d" && "Average uptime (last 30 days)"}
-                                {selected_range === "1y" && "Average uptime (last 365 days)"}
-                                {/* fallback for unknown */}
-                                {selected_range !== "7d" && selected_range !== "30d" && selected_range !== "1y" && "Average uptime"}
+                            <span className="text-lg text-gray-300 mt-6">Average uptime
+                                {selected_range === "7d" && " (last 7 days)"}
+                                {selected_range === "30d" && " (last 30 days)"}
+                                {selected_range === "1y" && " (last 365 days)"}
                             </span>
                         </span>
                     </div>
@@ -621,7 +619,7 @@ export default function Home() {
                                                 {
                                                     label: 'Average uptime (%)',
                                                     data: uptime_history.map((row) => row.average_uptime),
-                                                    borderColor: '#22c55e',
+                                                    borderColor: '#4ade80',
                                                     tension: 0.3,
                                                     pointRadius: 2,
                                                     clip: false,
@@ -629,7 +627,7 @@ export default function Home() {
                                                     backgroundColor: (context) => {
                                                         const ctx = context.chart.ctx;
                                                         const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-                                                        gradient.addColorStop(0, "#22c55e");
+                                                        gradient.addColorStop(0, "#4ade80");
                                                         gradient.addColorStop(1, "transparent");
                                                         return gradient;
                                                     },
@@ -655,6 +653,9 @@ export default function Home() {
                                                             return "Average uptime: " + context.parsed.y + "%";
                                                         }
                                                     },
+                                                },
+                                                decimation: {
+                                                    enabled: true,
                                                 },
                                             },
                                             resizeDelay: 0,
