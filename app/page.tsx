@@ -12,6 +12,7 @@ import {
     Title,
     Tooltip as ChartTooltip,
     Legend,
+    Filler,
 } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 
@@ -20,7 +21,7 @@ const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, ChartTooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, ChartTooltip, Legend, Filler);
 
 // helper for dynamic sort order labels
 function get_sort_order_labels(sort_by: "device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi") {
@@ -37,6 +38,13 @@ function get_sort_order_labels(sort_by: "device_id" | "uptime" | "firmware_versi
     }
 }
 
+
+const TIME_RANGES = [
+    { label: "Last 7 days", value: "7d" },
+    { label: "Last 30 days", value: "30d" },
+    { label: "Last 365 days", value: "1y" },
+];
+
 export default function Home() {
 
     // Dummy values for summary metrics (replace with real logic later)
@@ -48,7 +56,9 @@ export default function Home() {
     const [devices, set_devices] = useState<any[]>([]);
     const [loading, set_loading] = useState(true);
     const [displayedUptime, setDisplayedUptime] = useState(0);
+
     const [uptimeHistory, setUptimeHistory] = useState<{ day: string; average_uptime: number }[]>([]);
+    const [selectedRange, setSelectedRange] = useState<string>("7d");
 
     const [search, set_search] = useState("");
     const [sort_by, set_sort_by] = useState<"device_id" | "uptime" | "firmware_version" | "cpu_temperature" | "wifi_rssi">("device_id");
@@ -109,18 +119,37 @@ export default function Home() {
         };
     }, [loading, global_uptime_percent]);
 
+
     useEffect(() => {
+        // Example: fetch with time range filter (replace with real backend logic)
         const fetchUptimeHistory = async () => {
+            // You should update this query to use the selectedRange in your backend
             const { data, error } = await supabase
                 .from('devices_aggregated')
                 .select('day,average_uptime')
                 .order('day', { ascending: true });
             if (!error && data) {
-                setUptimeHistory(data);
+                // Filter data by selectedRange (simulate for now)
+                let filtered = data;
+                const now = new Date();
+                if (selectedRange === "24h") {
+                    const cutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+                    filtered = data.filter((row: any) => new Date(row.day) >= cutoff);
+                } else if (selectedRange === "7d") {
+                    const cutoff = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    filtered = data.filter((row: any) => new Date(row.day) >= cutoff);
+                } else if (selectedRange === "30d") {
+                    const cutoff = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    filtered = data.filter((row: any) => new Date(row.day) >= cutoff);
+                } else if (selectedRange === "1y") {
+                    const cutoff = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                    filtered = data.filter((row: any) => new Date(row.day) >= cutoff);
+                }
+                setUptimeHistory(filtered);
             }
         };
         fetchUptimeHistory();
-    }, []);
+    }, [selectedRange]);
 
     function format_timestamp(timestamp: any) {
         if (timestamp == null) {
@@ -514,52 +543,102 @@ export default function Home() {
                             <span className="text-lg text-gray-300 mt-6">Average uptime</span>
                         </span>
                     </div>
-                    {/* Big panel (2/3) */}
+                    {/* Big panel (2/3) with padding, y-axis label, and time range dropdown */}
                     <div
-                        className="flex flex-col bg-slate-800 rounded-xl min-h-[320px] mb-0 flex-1 border border-gray-700 justify-center items-center"
+                        className="flex flex-row bg-slate-800 rounded-xl min-h-[320px] mb-0 flex-1 border border-gray-700 px-8 py-8 items-stretch"
                         style={{ flexBasis: 'auto' }}
                     >
-                        {uptimeHistory.length > 0 ? (
-                            <div style={{ width: '100%', height: '100%', minHeight: 0, minWidth: 0, position: 'relative' }} className="flex-1 flex items-center justify-center">
-                                <Line
-                                    data={{
-                                        labels: uptimeHistory.map((row) => row.day),
-                                        datasets: [
-                                            {
-                                                label: 'Average uptime (%)',
-                                                data: uptimeHistory.map((row) => row.average_uptime),
-                                                borderColor: '#22c55e',
-                                                backgroundColor: 'rgba(34,197,94,0.2)',
-                                                tension: 0.3,
-                                                pointRadius: 2,
+                        {/* Chart and controls */}
+                        <div className="flex flex-col flex-1 h-full">
+                            {/* Uptime title and time range dropdown */}
+                            <div className="flex flex-row w-full items-center relative">
+                                <span className="absolute right-0 flex items-center gap-2">
+                                    <span className="material-symbols-rounded text-gray-400 select-none" style={{ fontSize: '1.6rem' }}>
+                                        tune
+                                    </span>
+                                    <select
+                                        className="rounded-lg bg-slate-900 text-gray-200 border border-gray-700 px-3 py-2 text-base focus:outline-none focus:ring-2 focus:ring-green-500"
+                                        value={selectedRange}
+                                        onChange={e => setSelectedRange(e.target.value)}
+                                        style={{ minWidth: 120, height: 44 }}
+                                    >
+                                        {TIME_RANGES.map((range) => (
+                                            <option key={range.value} value={range.value}>{range.label}</option>
+                                        ))}
+                                    </select>
+                                </span>
+        <span className="text-2xl font-extrabold text-gray-200 mr-6">Uptime</span>
+        <div className="flex-1" />
+                            </div>
+                            {uptimeHistory.length > 0 ? (
+                                <div style={{ width: '100%', height: '100%', minHeight: 220, minWidth: 0, position: 'relative', flex: 1 }} className="flex-1 flex items-center justify-center">
+                                    <Line
+                                        data={{
+                                            labels: uptimeHistory.map((row) => {
+                                                // Format date as Finnish style (e.g. 27.8. or 27.8.2025)
+                                                const d = new Date(row.day);
+                                                return d.getFullYear() !== new Date().getFullYear()
+                                                    ? `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`
+                                                    : `${d.getDate()}.${d.getMonth() + 1}.`;
+                                            }),
+                                            datasets: [
+                                                {
+                                                    label: 'Average uptime (%)',
+                                                    data: uptimeHistory.map((row) => row.average_uptime),
+                                                    borderColor: '#22c55e',
+                                                    tension: 0.3,
+                                                    pointRadius: 2,
+                                                    fill: true,
+                                                    backgroundColor: (context) => {
+                                                        const ctx = context.chart.ctx;
+                                                        const gradient = ctx.createLinearGradient(0, 0, 0, 200);
+                                                        gradient.addColorStop(0, "#22c55e");
+                                                        gradient.addColorStop(1, "transparent");
+                                                        return gradient;
+                                                    },
+                                                },
+                                            ],
+                                        }}
+                                        options={{
+                                            responsive: true,
+                                            maintainAspectRatio: false,
+                                            animation: {
+                                                duration: 200,
                                             },
-                                        ],
-                                    }}
-                                    options={{
-                                        responsive: true,
-                                        maintainAspectRatio: false,
-                                        animation: {
-                                            duration: 500,
-                                        },
-                                        plugins: {
-                                            legend: { display: false },
-                                            title: { display: false },
-                                        },
-                                        layout: {
-                                            padding: 0,
-                                        },
-                                        resizeDelay: 0,
-                                    }}
-                                    style={{ position: 'absolute', inset: 0 }}
-                                />
-                            </div>
-                        ) : loading ? (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <div className="w-5/6 h-2/3 bg-gray-700/60 rounded-xl animate-pulse" style={{ minHeight: 80, minWidth: 120 }} />
-                            </div>
-                        ) : (
-                            <span className="text-gray-400 text-lg">No uptime history data.</span>
-                        )}
+                                            plugins: {
+                                                legend: { display: false },
+                                                title: { display: true },
+                                            },
+                                            layout: {
+                                                padding: 0,
+                                            },
+                                            resizeDelay: 0,
+                                            devicePixelRatio: 4,
+                                            scales: {
+                                                y: {
+                                                    min: 0,
+                                                    max: 100,
+                                                    ticks: {
+                                                        stepSize: 20,
+                                                        font: { size: 14 },
+                                                        callback: function(value) {
+                                                            return value + "%"
+                                                        },
+                                                    },
+                                                },
+                                            },
+                                        }}
+                                        style={{ position: 'absolute', inset: 0 }}
+                                    />
+                                </div>
+                            ) : loading ? (
+                                <div className="w-full h-full flex items-center justify-center">
+                                    <div className="w-5/6 h-2/3 bg-gray-700/60 rounded-xl animate-pulse" style={{ minHeight: 80, minWidth: 120 }} />
+                                </div>
+                            ) : (
+                                <span className="text-gray-400 text-lg">No uptime history data.</span>
+                            )}
+                        </div>
                     </div>
                 </div>
                 
