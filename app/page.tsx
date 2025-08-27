@@ -654,9 +654,6 @@ export default function Home() {
                                                         }
                                                     },
                                                 },
-                                                decimation: {
-                                                    enabled: true,
-                                                },
                                             },
                                             resizeDelay: 0,
                                             devicePixelRatio: 4,
