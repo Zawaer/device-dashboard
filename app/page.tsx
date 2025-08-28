@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 import { Tooltip } from "react-tooltip";
+import { useTheme } from 'next-themes'
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -69,6 +70,34 @@ const TIME_RANGES = [
 ];
 
 export default function Home() {
+    const { theme, setTheme } = useTheme();
+    /*
+    // Dark mode toggle state
+    const [darkMode, setDarkMode] = useState<boolean>(() => {
+        if (typeof window !== 'undefined') {
+            const stored = localStorage.getItem('theme');
+            if (stored === 'dark') return true;
+            if (stored === 'light') return false;
+            // fallback to system preference
+            return window.matchMedia('(prefers-color-scheme: dark)').matches;
+        }
+        return false;
+    });
+
+    // Effect to update <body> class and localStorage (for Tailwind dark mode)
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const body = document.body;
+            if (darkMode) {
+                body.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+            }
+        }
+    }, [darkMode]);
+    */
 
     // State for uptime history and selected range
     const [uptime_history, setUptimeHistory] = useState<{ day: string; average_uptime: number }[]>([]);
@@ -347,8 +376,9 @@ export default function Home() {
     // Dummy values for summary metrics (replace with real logic later)
 
     return (
-        <div className="flex flex-col min-h-screen bg-slate-900">
-            <div className="flex flex-col m-8 gap-6 overflow-x-auto justify-start items-start">
+        <>
+            <div className="flex flex-col min-h-screen bg-white dark:bg-slate-900">
+                <div className="flex flex-col m-8 gap-6 overflow-x-auto justify-start items-start">
                 {/* New top row: Up, Longest Uptime, Avg WiFi, Avg Temp (each 1/4) */}
                 <div className="flex w-full gap-x-6">
                     {/* Up devices */}
@@ -961,25 +991,34 @@ export default function Home() {
                         })
                     )}
                 </div>
+                </div>
+                <Tooltip
+                    id="main-tooltip"
+                    place="top"
+                    style={{
+                        backgroundColor: "#23293a",
+                        color: "#e5e7eb",
+                        borderRadius: "12px",
+                        fontSize: "14px",
+                        padding: "8px 14px",
+                        boxShadow: "0 4px 24px 0 rgba(0,0,0,0.25)",
+                        fontWeight: 500,
+                        letterSpacing: "0.01em",
+                        zIndex: 50,
+                        whiteSpace: "pre-line",
+                        maxWidth: "220px",
+                    }}
+                    delayShow={300}
+                />
+                {/* Floating dark mode toggle button */}
+                <button
+                    className="fixed bottom-8 right-8 z-50 bg-slate-800 dark:bg-slate-700 border border-gray-700 dark:border-gray-600 text-gray-200 dark:text-gray-100 rounded-full px-5 py-3 shadow-lg hover:bg-slate-700 dark:hover:bg-slate-600 transition"
+                    aria-label="Toggle dark mode"
+                    onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                >
+                    Toggle {theme === 'dark' ? 'Light' : 'Dark'} Mode
+                </button>
             </div>
-            <Tooltip
-                id="main-tooltip"
-                place="top"
-                style={{
-                    backgroundColor: "#23293a",
-                    color: "#e5e7eb",
-                    borderRadius: "12px",
-                    fontSize: "14px",
-                    padding: "8px 14px",
-                    boxShadow: "0 4px 24px 0 rgba(0,0,0,0.25)",
-                    fontWeight: 500,
-                    letterSpacing: "0.01em",
-                    zIndex: 50,
-                    whiteSpace: "pre-line",
-                    maxWidth: "220px",
-                }}
-                delayShow={300}
-            />
-        </div>
+        </>
     );
 }
