@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { ThemeProvider } from 'next-themes'
 import "./globals.css";
 import "./globalicons.css";
 
@@ -21,15 +20,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-          rel="stylesheet"
-        />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=block"
+            rel="stylesheet"
+          />
       </head>
       <body className={`${inter.variable} antialiased`}>
-        {<ThemeProvider attribute="class" defaultTheme="dark" enableSystem>{children}</ThemeProvider>}
+        {children}
       </body>
     </html>
   );
