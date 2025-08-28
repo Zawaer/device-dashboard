@@ -360,7 +360,7 @@ export default function Home() {
                     >
                         <div className="relative flex items-center justify-center flex-shrink-0 ml-4 mr-9" style={{ width: 28, height: 28 }}>
                             <span className={"absolute w-15 h-15 rounded-full bg-green-400/20"} aria-hidden="true" />
-                            <span className={"w-5 h-5 rounded-full bg-green-400"} aria-hidden="true" />
+                            <span className={"w-5 h-5 rounded-full bg-green-400 animate-pulse-brightness"} aria-hidden="true" />
                         </div>
                         <div className="flex flex-col items-start justify-center flex-1">
                             {loading ? (
@@ -451,7 +451,7 @@ export default function Home() {
                     >
                         <div className="relative flex items-center justify-center flex-shrink-0 ml-4 mr-9" style={{ width: 28, height: 28 }}>
                             <span className={"absolute w-15 h-15 rounded-full bg-red-400/20"} aria-hidden="true" />
-                            <span className={"w-5 h-5 rounded-full bg-red-400"} aria-hidden="true" />
+                            <span className={"w-5 h-5 rounded-full bg-red-400 animate-pulse-brightness"} aria-hidden="true" />
                         </div>
                         <div className="flex flex-col items-start justify-center flex-1">
                             {loading ? (
@@ -808,7 +808,7 @@ export default function Home() {
                                             aria-hidden="true"
                                         />
                                         <span
-                                            className={`w-4 h-4 rounded-full ${circle_color}`}
+                                            className={`w-4 h-4 rounded-full ${circle_color} animate-pulse-brightness`}
                                             aria-hidden="true"
                                         />
                                     </div>
