@@ -589,7 +589,7 @@ export default function Home() {
                             <div className="relative flex flex-row items-center w-full">
                                 <span className="absolute right-0 flex items-center gap-2">
                                     <select
-                                        className="px-3 py-2 text-base text-gray-200 rounded-lg bg-slate-800 focus:outline-none focus:ring-0 focus:ring-green-500"
+                                        className="px-3 py-2 text-base text-gray-200 rounded-lg cursor-pointer bg-slate-800 focus:outline-none focus:ring-0 focus:ring-green-500"
                                         value={selected_range}
                                         onChange={e => setSelectedRange(e.target.value)}
                                         style={{ minWidth: 120, height: 44, marginRight: 2 }}
@@ -676,7 +676,7 @@ export default function Home() {
                                 </div>
                             ) : loading ? (
                                 <div className="flex items-center justify-center w-full h-full">
-                                    <div className="w-5/6 h-2/3 bg-gray-700/60 rounded-xl animate-pulse" style={{ minHeight: 80, minWidth: 120 }} />
+                                    <div className="w-full mt-4 h-7/8 bg-gray-700/60 rounded-xl animate-pulse"/>
                                 </div>
                             ) : (
                                 <span className="text-lg text-gray-400">No uptime history data.</span>
