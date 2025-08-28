@@ -74,9 +74,9 @@ export default function Home() {
     const [selected_range, setSelectedRange] = useState<string>("7d");
 
     // Dummy values for summary metrics (replace with real logic later)
-    const avg_cpu_temp = 42.0;
-    const avg_wifi_rssi = -61;
-    const latest_firmware_version = "1.2.3";
+    const avg_cpu_temp = 37.2;
+    const avg_wifi_rssi = -67;
+    const latest_firmware_version = "1.0.1";
 
     // Calculate average uptime for selected range (from uptime_history)
     const global_uptime_percent =
@@ -679,7 +679,9 @@ export default function Home() {
                                     <div className="w-full mt-4 h-7/8 bg-gray-700/60 rounded-xl animate-pulse"/>
                                 </div>
                             ) : (
-                                <span className="text-lg text-gray-400">No uptime history data.</span>
+                                <div className="flex items-center justify-center w-full h-full" style={{ transform: 'translateY(-10%)' }}>
+                                    <span className="text-lg text-gray-400">No uptime history data.</span>
+                                </div>
                             )}
                         </div>
                     </div>
