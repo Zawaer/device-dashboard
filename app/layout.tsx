@@ -29,7 +29,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${inter.variable} antialiased`}>
-        {<ThemeProvider attribute="class">{children}</ThemeProvider>}
+        {<ThemeProvider attribute="class" defaultTheme="dark" enableSystem>{children}</ThemeProvider>}
       </body>
     </html>
   );
