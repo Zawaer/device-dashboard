@@ -389,7 +389,7 @@ export default function Home() {
                             ) : longest_uptime_device ? (
                                 <span className="font-bold leading-none">
                                     <span className="text-white text-xl align-middle">{longest_uptime_device.device_id !== undefined && longest_uptime_device.device_id !== null ? longest_uptime_device.device_id.toString() : "-"} · </span>
-                                    <span className="text-xl align-middle">{format_timestamp(longest_uptime_device.booted)}</span>
+                                    <span className="text-white text-xl align-middle">{format_timestamp(longest_uptime_device.booted)}</span>
                                 </span>
                             ) : (
                                 <span className="text-base text-gray-400">-</span>
@@ -480,7 +480,7 @@ export default function Home() {
                             ) : longest_downtime_device ? (
                                 <span className="font-bold leading-none">
                                     <span className="text-white text-xl align-middle">{longest_downtime_device.device_id !== undefined && longest_downtime_device.device_id !== null ? longest_downtime_device.device_id.toString() : "-"} · </span>
-                                    <span className="text-xl align-middle">{format_timestamp(longest_downtime_device.last_updated)}</span>
+                                    <span className="text-white text-xl align-middle">{format_timestamp(longest_downtime_device.last_updated)}</span>
                                 </span>
                             ) : (
                                 <span className="text-base text-gray-400">-</span>
@@ -642,7 +642,7 @@ export default function Home() {
                                                 mode: 'index',
                                             },
                                             animation: {
-                                                duration: 100,
+                                                duration: 300,
                                             },
                                             plugins: {
                                                 legend: { display: false },
@@ -703,7 +703,7 @@ export default function Home() {
                                 inputMode="numeric"
                                 pattern="[0-9]*"
                                 placeholder="Search by device ID"
-                                className="h-11 pl-10 pr-3 py-2 rounded-xl bg-slate-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700"
+                                className="h-11 pl-10 pr-3 py-2 rounded-xl bg-slate-900 text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-400 shadow-none border border-gray-700"
                                 value={search}
                                 onChange={e => {
                                     const val = e.target.value.replace(/[^0-9]/g, "");
@@ -717,7 +717,7 @@ export default function Home() {
                                 sort
                             </span>
                             <select
-                                className="h-11 pl-10 pr-8 py-2 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700 appearance-none cursor-pointer"
+                                className="h-11 pl-10 pr-8 py-2 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-400 shadow-none border border-gray-700 appearance-none cursor-pointer"
                                 value={sort_by}
                                 onChange={e => set_sort_by(e.target.value as any)}
                                 style={{ minWidth: 180, backgroundPosition: 'right 1.5rem center' }}
@@ -734,7 +734,7 @@ export default function Home() {
                                 swap_vert
                             </span>
                             <select
-                                className="h-11 pl-10 pr-8 py-2 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-none border border-gray-700 appearance-none cursor-pointer"
+                                className="h-11 pl-10 pr-8 py-2 rounded-xl bg-slate-800 text-gray-200 focus:outline-none focus:ring-2 focus:ring-green-400 shadow-none border border-gray-700 appearance-none cursor-pointer"
                                 value={sort_order}
                                 onChange={e => set_sort_order(e.target.value as 'ascending' | 'descending')}
                                 style={{ minWidth: 150, backgroundPosition: 'right 1.5rem center' }}
@@ -752,7 +752,7 @@ export default function Home() {
                                     onChange={e => set_online_first(e.target.checked)}
                                     className="sr-only peer"
                                 />
-                                <span className="block bg-slate-700 peer-checked:bg-blue-500 w-11 h-6 rounded-full transition-colors duration-200"></span>
+                                <span className="block bg-slate-700 peer-checked:bg-green-400 w-11 h-6 rounded-full transition-colors duration-200"></span>
                                 <span className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full shadow-md transition-transform duration-200 peer-checked:translate-x-5"></span>
                             </span>
                         </label>
@@ -762,7 +762,7 @@ export default function Home() {
                 <div className="w-full flex flex-col overflow-hidden rounded-xl border border-gray-700">
                     {loading ? (
                         <div className="w-full flex flex-col items-center justify-center py-20">
-                            <span className="material-symbols-rounded animate-spin text-5xl text-blue-500 mb-4">
+                            <span className="material-symbols-rounded animate-spin text-5xl text-green-400 mb-4">
                                 progress_activity
                             </span>
                             <span className="text-gray-300 text-xl font-medium">Loading devices…</span>
