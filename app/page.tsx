@@ -22,6 +22,7 @@ const supabase = createClient(
 );
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, ChartTooltip, Legend, Filler);
+ChartJS.defaults.font.family = 'Inter';
 
 // Helper to interpolate color between red, yellow, green
 function getUptimeColor(percent: number) {
@@ -663,7 +664,6 @@ export default function Home() {
                                                     offset: false,
                                                     ticks: {
                                                         stepSize: 20,
-                                                        font: { size: 14 },
                                                         callback: function(value) {
                                                             return value + "%";
                                                         },
