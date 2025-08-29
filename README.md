@@ -1,10 +1,10 @@
 # Device Dashboard
 
-A modern, real-time dashboard for monitoring a network of ESP32 devices deployed throughout a building. Instantly track live metrics, such as device status, uptime, CPU temperature, WiFi signal strength, and more – all in one place.
+A modern, real-time dashboard for monitoring a network of ESP32 devices deployed throughout a building. Instantly track live metrics, such as device status, uptime, WiFi signal strength, and more!
 
 ## Live demo
 
-link will be added when available
+https://device-dashboard-app.vercel.app/
 
 ## Installation
 
