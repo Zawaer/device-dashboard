@@ -96,13 +96,7 @@ export default function Home() {
     const [sort_order, set_sort_order] = useState<"ascending" | "descending">("ascending");
     const [online_first, set_online_first] = useState(true);
 
-    // Modal state for per-device raw data
-    const [modal_open, set_modal_open] = useState(false);
-    const [modal_device, set_modal_device] = useState<any | null>(null);
-    const [modal_range, set_modal_range] = useState<'24h' | '7d'>('24h');
-    const [modal_metric, set_modal_metric] = useState<'uptime' | 'wifi_rssi' | 'cpu_temperature'>('uptime');
-    const [modal_loading, set_modal_loading] = useState(false);
-    const [modal_rows, set_modal_rows] = useState<any[]>([]);
+    // ...removed modal state...
 
     useEffect(() => {
         // Fetch devices (static-ish) from devices_list and enrich with the latest raw heartbeat per device
@@ -166,88 +160,11 @@ export default function Home() {
         fetch_data();
     }, []);
 
-    // Modal open/close
-    function open_device_modal(device: any) {
-        set_modal_device(device);
-        set_modal_open(true);
-        set_modal_range('24h');
-    }
-    function close_device_modal() {
-        set_modal_open(false);
-        set_modal_rows([]);
-        set_modal_loading(false);
-    }
+    // ...removed modal open/close handlers...
 
-    // Fetch raw rows for selected device when modal opens or range changes
-    useEffect(() => {
-        const run = async () => {
-            if (!modal_open || !modal_device) return;
-            set_modal_loading(true);
-            const now = new Date();
-            const cutoff = new Date(now.getTime() - (modal_range === '24h' ? 24 : 7 * 24) * 60 * 60 * 1000);
-            const { data, error } = await supabase
-                .from('devices_raw')
-                .select('device_id,cpu_temperature,wifi_rssi,last_updated')
-                .eq('device_id', modal_device.device_id)
-                .gte('last_updated', cutoff.toISOString())
-                .order('last_updated', { ascending: true });
-            if (error) {
-                console.error(error);
-                set_modal_rows([]);
-            } else {
-                set_modal_rows(data || []);
-            }
-            set_modal_loading(false);
-        };
-        run();
-    }, [modal_open, modal_device, modal_range]);
+    // ...removed modal data fetching effect...
 
-    // Build chart series for modal (bucket per hour for 24h, per day for 7d)
-    function build_modal_series(rows: any[], metric: 'uptime' | 'wifi_rssi' | 'cpu_temperature', range: '24h' | '7d') {
-        const labels: string[] = [];
-        const values: (number | null)[] = [];
-        if (!rows || rows.length === 0) return { labels, values };
-
-        const updateIntervalSec = (typeof (rows[0]?.update_interval ?? modal_device?.update_interval) === 'number'
-            ? (rows[0]?.update_interval ?? modal_device?.update_interval)
-            : parseInt(rows[0]?.update_interval ?? modal_device?.update_interval ?? '1800')) || 1800;
-        const now = new Date();
-        if (range === '24h') {
-            for (let i = 23; i >= 0; i--) {
-                const start = new Date(now.getTime() - i * 60 * 60 * 1000);
-                start.setMinutes(0, 0, 0);
-                const end = new Date(start.getTime() + 60 * 60 * 1000);
-                const bucketRows = rows.filter(r => new Date(r.last_updated) >= start && new Date(r.last_updated) < end);
-                labels.push(start.toLocaleTimeString(undefined, { hour: '2-digit' }));
-                if (metric === 'uptime') {
-                    const expected = Math.max(1, Math.round(3600 / updateIntervalSec));
-                    const pct = Math.min(100, (bucketRows.length / expected) * 100);
-                    values.push(Number.isFinite(pct) ? Math.round(pct * 10) / 10 : 0);
-                } else if (metric === 'wifi_rssi') {
-                    if (bucketRows.length === 0) values.push(null); else values.push(Math.round(bucketRows.reduce((s: number, r: any) => s + ((typeof r.wifi_rssi === 'number' ? r.wifi_rssi : parseInt(r.wifi_rssi) || 0)), 0) / bucketRows.length));
-                } else {
-                    if (bucketRows.length === 0) values.push(null); else values.push(Math.round((bucketRows.reduce((s: number, r: any) => s + ((typeof r.cpu_temperature === 'number' ? r.cpu_temperature : parseInt(r.cpu_temperature) || 0)), 0) / bucketRows.length) * 10) / 10);
-                }
-            }
-        } else {
-            for (let i = 6; i >= 0; i--) {
-                const start = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
-                const end = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i + 1);
-                const bucketRows = rows.filter(r => new Date(r.last_updated) >= start && new Date(r.last_updated) < end);
-                labels.push(`${start.getDate()}.${start.getMonth() + 1}.`);
-                if (metric === 'uptime') {
-                    const expected = Math.max(1, Math.round(86400 / updateIntervalSec));
-                    const pct = Math.min(100, (bucketRows.length / expected) * 100);
-                    values.push(Number.isFinite(pct) ? Math.round(pct * 10) / 10 : 0);
-                } else if (metric === 'wifi_rssi') {
-                    if (bucketRows.length === 0) values.push(null); else values.push(Math.round(bucketRows.reduce((s: number, r: any) => s + ((typeof r.wifi_rssi === 'number' ? r.wifi_rssi : parseInt(r.wifi_rssi) || 0)), 0) / bucketRows.length));
-                } else {
-                    if (bucketRows.length === 0) values.push(null); else values.push(Math.round((bucketRows.reduce((s: number, r: any) => s + ((typeof r.cpu_temperature === 'number' ? r.cpu_temperature : parseInt(r.cpu_temperature) || 0)), 0) / bucketRows.length) * 10) / 10);
-                }
-            }
-        }
-        return { labels, values };
-    }
+    // ...removed modal series builder...
 
     // Animate the progress circle value when loading finishes
     useEffect(() => {
@@ -951,7 +868,7 @@ export default function Home() {
                                         />
                                     </div>
                                     {/* Device info */}
-                                    <div className="flex flex-col flex-grow min-w-0 w-[120px] justify-center">
+                                    <div className="flex flex-col flex-none min-w-0 w-[250px] justify-center">
                                         <span
                                             className="font-normal leading-tight text-white truncate"
                                             style={{ fontSize: "22px" }}
@@ -977,7 +894,7 @@ export default function Home() {
                                         </span>
                                     </div>
                                     {/* Metrics grid*/}
-                                    <div className="grid grid-cols-5 gap-16 min-w-[580px] items-center flex-grow">
+                                    <div className="grid grid-cols-5 gap-26 min-w-[580px] items-center ml-auto">
                                         {/* RSSI */}
                                         <div
                                             className="flex items-center gap-3 w-[100px]"
@@ -1079,20 +996,6 @@ export default function Home() {
                                             </span>
                                         </div>
                                     </div>
-                                    {/* More button at the far right */}
-                                    <div className="flex items-center justify-center w-10 h-full ml-4">
-                                        <button
-                                            type="button"
-                                            className="flex items-center justify-center w-10 h-10 transition rounded-full cursor-pointer hover:bg-slate-700"
-                                            onClick={() => open_device_modal(device)}
-                                            data-tooltip-id="main-tooltip"
-                                            data-tooltip-content="Show raw data and charts"
-                                        >
-                                            <span className="text-2xl text-gray-300 select-none material-symbols-rounded">
-                                                more_horiz
-                                            </span>
-                                        </button>
-                                    </div>
                                 </div>
                             );
                         })
@@ -1123,128 +1026,7 @@ export default function Home() {
                     }}
                     delayShow={300}
                 />
-                {modal_open && (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                        {/* Backdrop */}
-                        <div className="absolute inset-0 bg-black/60" onClick={close_device_modal} />
-                        {/* Panel */}
-                        <div className="relative z-10 w-full max-w-5xl p-6 border border-gray-700 rounded-2xl bg-slate-900 text-gray-200 shadow-2xl">
-                            {/* Header */}
-                            <div className="flex items-center justify-between mb-4">
-                                <div className="flex items-center gap-3">
-                                    <span className="text-2xl font-bold">Device {modal_device?.device_id ?? '-'}</span>
-                                    <span className="px-2 py-1 text-xs rounded bg-slate-800 border border-gray-700">FW {modal_device?.firmware_version ?? '-'}</span>
-                                </div>
-                                <button
-                                    className="flex items-center justify-center w-10 h-10 rounded-full hover:bg-slate-800"
-                                    onClick={close_device_modal}
-                                    aria-label="Close"
-                                >
-                                    <span className="text-2xl select-none material-symbols-rounded">close</span>
-                                </button>
-                            </div>
-                            {/* Device meta */}
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                                <div className="flex items-center gap-2"><span className="text-gray-400">Last updated:</span><span>{modal_device?.last_updated ? new Date(modal_device.last_updated).toLocaleString() : '-'}</span></div>
-                                <div className="flex items-center gap-2"><span className="text-gray-400">Booted:</span><span>{modal_device?.booted ? new Date(modal_device.booted).toLocaleString() : '-'}</span></div>
-                                <div className="flex items-center gap-2"><span className="text-gray-400">WiFi SSID:</span><span>{modal_device?.wifi_ssid ?? '-'}</span></div>
-                                <div className="flex items-center gap-2"><span className="text-gray-400">Update interval:</span><span>{modal_device?.update_interval ? `${modal_device.update_interval}s` : '-'}</span></div>
-                            </div>
-                            {/* Controls */}
-                            <div className="flex items-center justify-between gap-3 mb-3">
-                                <div className="flex items-center gap-2">
-                                    <label className="text-gray-400 text-sm">Metric</label>
-                                    <select
-                                        className="px-3 py-2 text-base text-gray-200 rounded-lg cursor-pointer bg-slate-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400"
-                                        value={modal_metric}
-                                        onChange={(e) => set_modal_metric(e.target.value as any)}
-                                    >
-                                        <option value="uptime">Uptime</option>
-                                        <option value="wifi_rssi">WiFi RSSI</option>
-                                        <option value="cpu_temperature">CPU Temp</option>
-                                    </select>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <label className="text-gray-400 text-sm">Range</label>
-                                    <select
-                                        className="px-3 py-2 text-base text-gray-200 rounded-lg cursor-pointer bg-slate-800 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-green-400"
-                                        value={modal_range}
-                                        onChange={(e) => set_modal_range(e.target.value as '24h' | '7d')}
-                                    >
-                                        <option value="24h">Last 24 hours</option>
-                                        <option value="7d">Last 7 days</option>
-                                    </select>
-                                </div>
-                            </div>
-                            {/* Chart */}
-                            <div className="relative w-full h-[360px] border border-gray-700 rounded-xl bg-slate-800">
-                                {modal_loading ? (
-                                    <div className="flex items-center justify-center w-full h-full">
-                                        <span className="text-4xl text-green-400 material-symbols-rounded animate-spin">progress_activity</span>
-                                    </div>
-                                ) : (
-                                    (() => {
-                                        const { labels, values } = build_modal_series(modal_rows, modal_metric, modal_range);
-                                        return (
-                                            <Line
-                                                data={{
-                                                    labels,
-                                                    datasets: [
-                                                        {
-                                                            label: modal_metric === 'uptime' ? 'Uptime (%)' : modal_metric === 'wifi_rssi' ? 'WiFi RSSI (dBm)' : 'CPU Temp (°C)',
-                                                            data: values,
-                                                            spanGaps: true,
-                                                            borderColor: modal_metric === 'uptime' ? '#4ade80' : modal_metric === 'wifi_rssi' ? '#60a5fa' : '#fb923c',
-                                                            tension: 0.3,
-                                                            pointRadius: 2,
-                                                            clip: false,
-                                                            fill: true,
-                                                            backgroundColor: (context) => {
-                                                                const ctx = context.chart.ctx;
-                                                                const gradient = ctx.createLinearGradient(0, 0, 0, 280);
-                                                                gradient.addColorStop(0, modal_metric === 'uptime' ? '#4ade80' : modal_metric === 'wifi_rssi' ? '#60a5fa' : '#fb923c');
-                                                                gradient.addColorStop(1, 'transparent');
-                                                                return gradient;
-                                                            },
-                                                        },
-                                                    ],
-                                                }}
-                                                options={{
-                                                    responsive: true,
-                                                    maintainAspectRatio: false,
-                                                    interaction: { intersect: false, mode: 'index' },
-                                                    plugins: {
-                                                        legend: { display: false },
-                                                        tooltip: {
-                                                            callbacks: {
-                                                                label: (ctx) => {
-                                                                    const y = ctx.parsed.y;
-                                                                    if (modal_metric === 'uptime') return `Uptime: ${y}%`;
-                                                                    if (modal_metric === 'wifi_rssi') return `WiFi RSSI: ${y} dBm`;
-                                                                    return `CPU Temp: ${y}°C`;
-                                                                }
-                                                            }
-                                                        }
-                                                    },
-                                                    scales: {
-                                                        y: modal_metric === 'uptime' ? {
-                                                            min: 0, max: 100, ticks: { stepSize: 20, callback: (v) => `${v}%` }
-                                                        } : modal_metric === 'wifi_rssi' ? {
-                                                            min: -100, max: -30, ticks: { stepSize: 10, callback: (v) => `${v} dBm` }
-                                                        } : {
-                                                            min: 0, max: 100, ticks: { stepSize: 10, callback: (v) => `${v}°C` }
-                                                        }
-                                                    }
-                                                }}
-                                                style={{ position: 'absolute', inset: 0 }}
-                                            />
-                                        );
-                                    })()
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* modal removed */}
             </div>
         </>
     );
