@@ -695,7 +695,7 @@ export default function Home() {
                                                 mode: 'index',
                                             },
                                             animation: {
-                                                duration: 300,
+                                                duration: 200,
                                             },
                                             plugins: {
                                                 legend: { display: false },
@@ -894,7 +894,7 @@ export default function Home() {
                                         </span>
                                     </div>
                                     {/* Metrics grid*/}
-                                    <div className="grid grid-cols-5 gap-26 min-w-[580px] items-center ml-auto">
+                                    <div className="grid grid-cols-5 gap-30 min-w-[580px] items-center ml-auto">
                                         {/* RSSI */}
                                         <div
                                             className="flex items-center gap-3 w-[100px]"
